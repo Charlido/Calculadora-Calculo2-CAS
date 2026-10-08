@@ -1,68 +1,59 @@
 package model;
 
-import org.matheclipse.core.eval.ExprEvaluator;
-import org.matheclipse.core.eval.TeXUtilities;
-import org.matheclipse.core.interfaces.IExpr;
-import java.io.StringWriter;
-
 public class MathEngine {
-    private final ExprEvaluator evaluator;
-    private final TeXUtilities texUtil;
 
+    // Ya no requerimos librerías externas para la lógica, usamos POO puro.
     public MathEngine() {
-        evaluator = new ExprEvaluator(false, (short) 100);
-        // AQUÍ ESTÁ LA CORRECCIÓN: Se extrae el EvalEngine interno
-        texUtil = new TeXUtilities(evaluator.getEvalEngine(), true);
     }
 
     public String calcularLaTeX(int modo, String f, String g, String a, String b, String var) throws Exception {
-        String fLimpio = formatearExpresion(f);
-        String gLimpio = formatearExpresion(g);
-        String expresionSymja = "";
+        // Usamos nuestro propio parser POO
+        Polinomio polinomioF = Polinomio.parse(f);
+        String latexResult = "";
 
         switch (modo) {
             case 0: // Derivada
-                expresionSymja = "D(" + fLimpio + ", " + var + ")";
+                Polinomio derivada = polinomioF.derivar();
+                latexResult = "f'(" + var + ") = " + derivada.toLaTeX();
                 break;
+
             case 1: // Integral Indefinida
-                expresionSymja = "Integrate(" + fLimpio + ", " + var + ")";
+                Polinomio integral = polinomioF.integrar();
+                latexResult = "\\int f(" + var + ") d" + var + " = " + integral.toLaTeX() + " + C";
                 break;
+
             case 2: // Integral Definida
-                expresionSymja = "Integrate(" + fLimpio + ", {" + var + ", " + a + ", " + b + "})";
+                Polinomio integralDef = polinomioF.integrar();
+                double limA = Double.parseDouble(a);
+                double limB = Double.parseDouble(b);
+
+                // Teorema Fundamental del Cálculo (POO puro)
+                double evaluacionA = integralDef.evaluar(limA);
+                double evaluacionB = integralDef.evaluar(limB);
+                double resultado = evaluacionB - evaluacionA;
+
+                String resStr = (resultado % 1 == 0) ? String.format("%.0f", resultado) : String.format("%.2f", resultado);
+                latexResult = "\\text{Resultado} = " + resStr;
                 break;
+
             case 3: // Área entre curvas
-                expresionSymja = "Integrate((" + fLimpio + ") - (" + gLimpio + "), {" + var + ", " + a + ", " + b + "})";
+                Polinomio polinomioG = Polinomio.parse(g);
+                Polinomio intF = polinomioF.integrar();
+                Polinomio intG = polinomioG.integrar();
+                double limA_Area = Double.parseDouble(a);
+                double limB_Area = Double.parseDouble(b);
+
+                double resF = intF.evaluar(limB_Area) - intF.evaluar(limA_Area);
+                double resG = intG.evaluar(limB_Area) - intG.evaluar(limA_Area);
+                double area = Math.abs(resF - resG);
+
+                String areaStr = (area % 1 == 0) ? String.format("%.0f", area) : String.format("%.2f", area);
+                latexResult = "\\text{Área} = " + areaStr + " u^2";
                 break;
-            case 4: // Volumen (Eje)
-                expresionSymja = "Integrate(Pi * (" + fLimpio + ")^2, {" + var + ", " + a + ", " + b + "})";
-                break;
+
+            default:
+                latexResult = "\\text{Modo en desarrollo}";
         }
-
-        // 1. Evalúa el cálculo matemáticamente
-        IExpr resultado = evaluator.evaluate(expresionSymja);
-
-        // 2. Convierte el resultado a sintaxis LaTeX
-        StringWriter writer = new StringWriter();
-        texUtil.toTeX(resultado, writer);
-        String latex = writer.toString();
-
-        // Agrega la constante C a las integrales indefinidas
-        if (modo == 1) {
-            latex += " + C";
-        }
-
-        return latex;
-    }
-
-    private String formatearExpresion(String expr) {
-        if (expr == null) return "";
-        return expr.toLowerCase()
-                .replace("sin", "Sin")
-                .replace("cos", "Cos")
-                .replace("tan", "Tan")
-                .replace("ln", "Log")
-                .replace("exp", "Exp")
-                .replace("pi", "Pi")
-                .replace("e^", "E^");
+        return latexResult;
     }
 }

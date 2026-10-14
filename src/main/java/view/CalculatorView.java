@@ -1,7 +1,6 @@
 package view;
 
 import view.components.BotonRedondeado;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -11,14 +10,13 @@ public class CalculatorView extends JFrame {
     public JTextField txtF, txtG, txtA, txtB, campoActivo;
     public JRadioButton rbX, rbY;
     public JLabel lblRenderMath;
-    public BotonRedondeado btnCalcular, btnLimpiar;
+    public BotonRedondeado btnCalcular, btnLimpiar, btnManual; // Declaramos btnManual
     public JPanel panelTeclado;
 
-    // Matriz de botones generados (sigue siendo compatible porque BotonRedondeado hereda de JButton)
     public BotonRedondeado[] botonesTeclado = new BotonRedondeado[20];
 
     // Paleta de colores Retro-Kawaii Pastel
-    private final Color fondoPastel = Color.decode("#D0E8F2");     // Azul cielo de fondo
+    private final Color fondoPastel = Color.decode("#D0E8F2");     // Azul cielo
     private final Color colorNumeros = Color.decode("#E8DAEF");    // Morado pastel
     private final Color colorOperadores = Color.decode("#FCF3CF"); // Amarillo pastel
     private final Color colorFunciones = Color.decode("#FADBD8");  // Rosa pastel
@@ -26,20 +24,20 @@ public class CalculatorView extends JFrame {
 
     public CalculatorView() {
         setTitle("Calculadora Kawaii - Symja & LaTeX");
-        setSize(520, 780);
+        setSize(550, 780); // Ligeramente más ancha para los botones
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
-        // Aplicar el color de fondo principal
         getContentPane().setBackground(fondoPastel);
 
         // =======================================
         // PANEL SUPERIOR: Entradas dinámicas
         // =======================================
+        // Configuramos 7 filas exactas
         JPanel panelTop = new JPanel(new GridLayout(7, 2, 5, 5));
         panelTop.setBorder(new EmptyBorder(15, 15, 5, 15));
-        panelTop.setOpaque(false); // Para que se vea el fondo azul pastel
+        panelTop.setOpaque(false);
 
         comboModo = new JComboBox<>(new String[]{
                 "Derivada Simbólica",
@@ -70,6 +68,11 @@ public class CalculatorView extends JFrame {
         panelTop.add(new JLabel("Límite inferior a:")); panelTop.add(txtA);
         panelTop.add(new JLabel("Límite superior b:")); panelTop.add(txtB);
 
+        // El botón de ayuda bien instanciado
+        panelTop.add(new JLabel("Ayuda:"));
+        btnManual = new BotonRedondeado("📖 Ver Manual", colorFunciones);
+        panelTop.add(btnManual);
+
         // =======================================
         // PANEL CENTRAL: Renderizado LaTeX
         // =======================================
@@ -85,7 +88,6 @@ public class CalculatorView extends JFrame {
         contenedorArriba.add(panelTop, BorderLayout.NORTH);
         contenedorArriba.add(panelDisplay, BorderLayout.CENTER);
 
-        // Un pequeño margen alrededor del display blanco
         JPanel margenArriba = new JPanel(new BorderLayout());
         margenArriba.setBorder(new EmptyBorder(10, 15, 0, 15));
         margenArriba.setOpaque(false);
@@ -98,7 +100,7 @@ public class CalculatorView extends JFrame {
         // =======================================
         panelTeclado = new JPanel(new GridBagLayout());
         panelTeclado.setBorder(new EmptyBorder(10, 15, 20, 15));
-        panelTeclado.setOpaque(false); // Transparente para ver el azul pastel
+        panelTeclado.setOpaque(false);
         add(panelTeclado, BorderLayout.CENTER);
 
         construirTecladoKawaii();
@@ -107,12 +109,10 @@ public class CalculatorView extends JFrame {
     private void construirTecladoKawaii() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
-        // ¡Importante! Aquí le damos el espaciado o "respiración" entre teclas
         gbc.insets = new Insets(6, 6, 6, 6);
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
 
-        // Fila 0: Bloque Superior (Funciones) -> Rosa Pastel
         String[] funciones = {"sin(", "cos(", "tan(", "ln(", "x", "y"};
         for (int i = 0; i < funciones.length; i++) {
             gbc.gridx = i; gbc.gridy = 0;
@@ -120,7 +120,6 @@ public class CalculatorView extends JFrame {
             panelTeclado.add(botonesTeclado[i], gbc);
         }
 
-        // Bloque central (Números -> Morado) y Derecho (Operadores -> Amarillo)
         String[][] centralYDerecho = {
                 {"7", "8", "9", "/", "^"},
                 {"4", "5", "6", "*", "+"},
@@ -134,7 +133,7 @@ public class CalculatorView extends JFrame {
 
                 gbc.gridx = col;
                 if (col >= 3) {
-                    gbc.gridx = col + 1; // Espacio extra antes de los operadores
+                    gbc.gridx = col + 1;
                 }
                 gbc.gridy = fila + 1;
                 gbc.gridwidth = 1;
@@ -142,7 +141,7 @@ public class CalculatorView extends JFrame {
 
                 if (txt.equals("=")) {
                     btnCalcular = new BotonRedondeado(txt, colorAcciones);
-                    gbc.gridheight = 2; // El botón "=" ocupa dos filas hacia abajo
+                    gbc.gridheight = 2;
                     panelTeclado.add(btnCalcular, gbc);
                 } else if (txt.matches("[0-9]")) {
                     botonesTeclado[btnIndex] = new BotonRedondeado(txt, colorNumeros);
@@ -156,11 +155,10 @@ public class CalculatorView extends JFrame {
             }
         }
 
-        // Última fila (0, ., C)
         gbc.gridheight = 1;
         gbc.gridy = 4;
 
-        gbc.gridx = 0; gbc.gridwidth = 2; // El cero es más ancho
+        gbc.gridx = 0; gbc.gridwidth = 2;
         botonesTeclado[18] = new BotonRedondeado("0", colorNumeros);
         panelTeclado.add(botonesTeclado[18], gbc);
 

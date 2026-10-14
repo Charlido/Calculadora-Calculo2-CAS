@@ -57,44 +57,50 @@ public class Polinomio {
     }
 
     // ==============================================================
-    // PARSER: Convierte texto como "3x^2 - 5x + 2" a Objetos Termino
+    // PARSER CON TRY-CATCH: Protegido contra errores de sintaxis
     // ==============================================================
-    public static Polinomio parse(String expr) {
-        Polinomio p = new Polinomio();
-        // Limpiamos la entrada (quitamos espacios y asteriscos para simplificar)
-        expr = expr.replace(" ", "").replace("*", "").toLowerCase();
-
-        // Truco para separar los términos usando el signo "+"
-        expr = expr.replace("-", "+-");
-        if (expr.startsWith("+-")) expr = expr.substring(1);
-
-        String[] fragmentos = expr.split("\\+");
-
-        for (String frag : fragmentos) {
-            if (frag.isEmpty()) continue;
-            double coef = 1;
-            int exp = 0;
-
-            if (frag.contains("x")) {
-                String[] partes = frag.split("x");
-                // Determinar el coeficiente
-                if (partes.length == 0 || partes[0].isEmpty()) coef = 1;
-                else if (partes[0].equals("-")) coef = -1;
-                else coef = Double.parseDouble(partes[0]);
-
-                // Determinar el exponente
-                if (frag.contains("^")) {
-                    exp = Integer.parseInt(frag.substring(frag.indexOf("^") + 1));
-                } else {
-                    exp = 1; // Si tiene x pero no ^, el exponente es 1 (ej. 5x)
-                }
-            } else {
-                // Si no tiene x, es una constante (ej. 2)
-                coef = Double.parseDouble(frag);
-                exp = 0;
-            }
-            p.agregarTermino(new Termino(coef, exp));
+    public static Polinomio parse(String expr) throws IllegalArgumentException {
+        if (expr == null || expr.trim().isEmpty()) {
+            throw new IllegalArgumentException("La función no puede estar vacía.");
         }
+
+        Polinomio p = new Polinomio();
+
+        try {
+            expr = expr.replace(" ", "").replace("*", "").toLowerCase();
+            expr = expr.replace("-", "+-");
+            if (expr.startsWith("+-")) expr = expr.substring(1);
+
+            String[] fragmentos = expr.split("\\+");
+
+            for (String frag : fragmentos) {
+                if (frag.isEmpty()) continue;
+                double coef = 1;
+                int exp = 0;
+
+                if (frag.contains("x") || frag.contains("y")) { // Soporte para variables x o y
+                    String[] partes = frag.split("[xy]");
+
+                    if (partes.length == 0 || partes[0].isEmpty()) coef = 1;
+                    else if (partes[0].equals("-")) coef = -1;
+                    else coef = Double.parseDouble(partes[0]);
+
+                    if (frag.contains("^")) {
+                        exp = Integer.parseInt(frag.substring(frag.indexOf("^") + 1));
+                    } else {
+                        exp = 1;
+                    }
+                } else {
+                    coef = Double.parseDouble(frag);
+                    exp = 0;
+                }
+                p.agregarTermino(new Termino(coef, exp));
+            }
+        } catch (Exception e) {
+            // Si cualquier cosa falla al leer, lanzamos un error limpio
+            throw new IllegalArgumentException("Error de sintaxis matemática. Revisa el formato (Ej: 3x^2 - 5x + 2).");
+        }
+
         return p;
     }
 }

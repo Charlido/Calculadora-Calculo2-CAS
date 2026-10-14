@@ -96,22 +96,28 @@ public class CalculatorController {
         String var = view.rbX.isSelected() ? "x" : "y";
         int modo = view.comboModo.getSelectedIndex();
 
+        // 1. Validaciones previas de la UI
         if (f.isEmpty()) {
-            JOptionPane.showMessageDialog(view, "Debes ingresar una función f(var).", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(view, "Debes ingresar una función principal en f(var).", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
+        // 2. Ejecución con manejo de excepciones (TRY-CATCH MULTIPLE)
         try {
             String latexResult = model.calcularLaTeX(modo, f, g, a, b, var);
             org.scilab.forge.jlatexmath.TeXFormula formula = new org.scilab.forge.jlatexmath.TeXFormula(latexResult);
             Icon icon = formula.createTeXIcon(org.scilab.forge.jlatexmath.TeXConstants.STYLE_DISPLAY, 22);
             view.lblRenderMath.setIcon(icon);
-        } catch (Exception ex) {
+
+        } catch (IllegalArgumentException ex) {
+            // Este catch atrapa los errores de nuestro Parser y de los Límites de integración
             view.lblRenderMath.setIcon(null);
-            JOptionPane.showMessageDialog(view,
-                    "Error de Sintaxis Matemática.\nDetalle: " + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(view, ex.getMessage(), "Error de Ingreso", JOptionPane.WARNING_MESSAGE);
+
+        } catch (Exception ex) {
+            // Este catch atrapa cualquier otro error inesperado (ej. JLaTeXMath fallando)
+            view.lblRenderMath.setIcon(null);
+            JOptionPane.showMessageDialog(view, "No se pudo renderizar la fórmula matemática.\nDetalle: " + ex.getMessage(), "Error Interno", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -132,7 +138,6 @@ public class CalculatorController {
                 "    <!-- ENCABEZADO ESTILO BROCHURE GEOMÉTRICO -->\n" +
                 "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 18px;\">\n" +
                 "        <tr>\n" +
-                "            <!-- Bloque principal azul pizarra ocupando todo el ancho -->\n" +
                 "            <td bgcolor=\"#4A5264\" align=\"center\" valign=\"middle\" style=\"background-color: #4A5264; padding: 20px; color: #FFFFFF;\">\n" +
                 "                <b style=\"font-size: 18px; letter-spacing: 3px;\">MANUAL DE USUARIO</b>\n" +
                 "            </td>\n" +
@@ -279,9 +284,9 @@ public class CalculatorController {
                 "        </tr>\n" +
                 "    </table>\n" +
                 "\n" +
-
                 "</body>\n" +
                 "</html>";
+
         textoManual.setText(htmlContent);
 
         JScrollPane scrollPane = new JScrollPane(textoManual);

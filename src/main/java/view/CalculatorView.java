@@ -10,34 +10,44 @@ public class CalculatorView extends JFrame {
     public JTextField txtF, txtG, txtA, txtB, campoActivo;
     public JRadioButton rbX, rbY;
     public JLabel lblRenderMath;
-    public BotonRedondeado btnCalcular, btnLimpiar, btnManual; // Declaramos btnManual
+    public BotonRedondeado btnCalcular, btnLimpiar, btnManual, btnGraficar;
     public JPanel panelTeclado;
 
     public BotonRedondeado[] botonesTeclado = new BotonRedondeado[20];
 
-    // Paleta de colores Retro-Kawaii Pastel
-    private final Color fondoPastel = Color.decode("#D0E8F2");     // Azul cielo
-    private final Color colorNumeros = Color.decode("#E8DAEF");    // Morado pastel
-    private final Color colorOperadores = Color.decode("#FCF3CF"); // Amarillo pastel
-    private final Color colorFunciones = Color.decode("#FADBD8");  // Rosa pastel
-    private final Color colorAcciones = Color.decode("#F5B7B1");   // Rojo/Naranja pastel
+    // --- NUEVA PALETA DE COLORES "CYBERPUNK / MODO OSCURO" ---
+    // Fondo principal manejado por un degradado, estos son los colores base
+    private final Color colorOscuroFondo = Color.decode("#1E1B3A"); // Azul oscuro noche
+    private final Color colorCajasTexto = Color.decode("#2A274E"); // Un poco más claro que el fondo
+    private final Color colorTextoGeneral = Color.WHITE;
+
+    // Colores de Botones
+    private final Color colorBtnNumeros = Color.decode("#35325C"); // Azul grisáceo
+    private final Color colorBtnOperadores = Color.decode("#4E498A"); // Morado apagado
+    private final Color colorBtnAccionPrincipal = Color.decode("#00E676"); // Verde Neón (como el botón "Get Started")
+    private final Color colorBtnAccionSecundaria = Color.decode("#E91E63"); // Rosa/Rojo oscuro para "C"
+    private final Color colorBordeNeón = Color.decode("#00E676");
 
     public CalculatorView() {
-        setTitle("Calculadora Kawaii - Symja & LaTeX");
-        setSize(550, 780); // Ligeramente más ancha para los botones
+        setTitle("Calculadora Avanzada - POO & LaTeX");
+        setSize(550, 780);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
 
-        getContentPane().setBackground(fondoPastel);
+        // Usamos nuestro nuevo panel con degradado como fondo principal
+        PanelDegradado fondoPrincipal = new PanelDegradado();
+        fondoPrincipal.setLayout(new BorderLayout(10, 10));
+        setContentPane(fondoPrincipal);
 
         // =======================================
         // PANEL SUPERIOR: Entradas dinámicas
         // =======================================
-        // Configuramos 7 filas exactas
         JPanel panelTop = new JPanel(new GridLayout(7, 2, 5, 5));
         panelTop.setBorder(new EmptyBorder(15, 15, 5, 15));
         panelTop.setOpaque(false);
+
+        // Estilo de los Labels
+        Font fuenteLabels = new Font("Segoe UI", Font.BOLD, 12);
 
         comboModo = new JComboBox<>(new String[]{
                 "Derivada Simbólica",
@@ -46,39 +56,61 @@ public class CalculatorView extends JFrame {
                 "Área entre curvas f(x) - g(x)",
                 "Volumen de Revolución"
         });
+        comboModo.setBackground(colorCajasTexto);
+        comboModo.setForeground(colorTextoGeneral);
 
-        txtF = new JTextField();
-        txtG = new JTextField();
-        txtA = new JTextField();
-        txtB = new JTextField();
+        // --- ESTILO OSCURO PARA CAJAS DE TEXTO ---
+        Font fuenteModerna = new Font("Segoe UI", Font.BOLD, 14);
+        javax.swing.border.Border bordeNeón = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(colorBordeNeón, 1, true),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        );
+
+        txtF = crearTextFieldOscuro(fuenteModerna, bordeNeón);
+        txtG = crearTextFieldOscuro(fuenteModerna, bordeNeón);
+        txtA = crearTextFieldOscuro(fuenteModerna, bordeNeón);
+        txtB = crearTextFieldOscuro(fuenteModerna, bordeNeón);
         campoActivo = txtF;
 
         JPanel panelRadios = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         panelRadios.setOpaque(false);
-        rbX = new JRadioButton("dx", true); rbX.setOpaque(false);
-        rbY = new JRadioButton("dy"); rbY.setOpaque(false);
+        rbX = new JRadioButton("dx", true); configurarRadio(rbX, fuenteLabels);
+        rbY = new JRadioButton("dy"); configurarRadio(rbY, fuenteLabels);
         ButtonGroup bg = new ButtonGroup();
         bg.add(rbX); bg.add(rbY);
         panelRadios.add(rbX); panelRadios.add(rbY);
 
-        panelTop.add(new JLabel("Modo de Operación:")); panelTop.add(comboModo);
-        panelTop.add(new JLabel("Variable:")); panelTop.add(panelRadios);
-        panelTop.add(new JLabel("Función f(var):")); panelTop.add(txtF);
-        panelTop.add(new JLabel("Función g(var):")); panelTop.add(txtG);
-        panelTop.add(new JLabel("Límite inferior a:")); panelTop.add(txtA);
-        panelTop.add(new JLabel("Límite superior b:")); panelTop.add(txtB);
+        panelTop.add(crearLabelOscuro("Modo de Operación:", fuenteLabels)); panelTop.add(comboModo);
+        panelTop.add(crearLabelOscuro("Variable:", fuenteLabels)); panelTop.add(panelRadios);
+        panelTop.add(crearLabelOscuro("Función f(var):", fuenteLabels)); panelTop.add(txtF);
+        panelTop.add(crearLabelOscuro("Función g(var):", fuenteLabels)); panelTop.add(txtG);
+        panelTop.add(crearLabelOscuro("Límite inferior a:", fuenteLabels)); panelTop.add(txtA);
+        panelTop.add(crearLabelOscuro("Límite superior b:", fuenteLabels)); panelTop.add(txtB);
 
-        // El botón de ayuda bien instanciado
-        panelTop.add(new JLabel("Ayuda:"));
-        btnManual = new BotonRedondeado("📖 Ver Manual", colorFunciones);
-        panelTop.add(btnManual);
+        // --- BOTONES DE ACCIÓN (NEÓN) ---
+        JPanel panelAcciones = new JPanel(new GridLayout(1, 2, 5, 0));
+        panelAcciones.setOpaque(false);
+
+        // El botón principal verde neón, con texto oscuro para contraste
+        btnGraficar = new BotonRedondeado("📈 Graficar f(x)", colorBtnAccionPrincipal);
+        btnGraficar.setForeground(Color.BLACK);
+
+        btnManual = new BotonRedondeado("📖 Manual", colorBtnOperadores);
+        btnManual.setForeground(colorTextoGeneral);
+
+        panelAcciones.add(btnManual);
+        panelAcciones.add(btnGraficar);
+
+        panelTop.add(crearLabelOscuro("Opciones Adicionales:", fuenteLabels));
+        panelTop.add(panelAcciones);
 
         // =======================================
-        // PANEL CENTRAL: Renderizado LaTeX
+        // PANEL CENTRAL: Renderizado LaTeX (Claro para que se lea la fórmula)
         // =======================================
         JPanel panelDisplay = new JPanel(new BorderLayout());
-        panelDisplay.setBorder(BorderFactory.createTitledBorder("Resultado Exacto"));
-        panelDisplay.setBackground(Color.WHITE);
+        // Borde verde neón sutil para el área de resultado
+        panelDisplay.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(colorBordeNeón), "Resultado Exacto", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, fuenteLabels, colorTextoGeneral));
+        panelDisplay.setBackground(Color.WHITE); // Fondo blanco para LaTeX
 
         lblRenderMath = new JLabel("", SwingConstants.CENTER);
         panelDisplay.add(lblRenderMath, BorderLayout.CENTER);
@@ -103,10 +135,34 @@ public class CalculatorView extends JFrame {
         panelTeclado.setOpaque(false);
         add(panelTeclado, BorderLayout.CENTER);
 
-        construirTecladoKawaii();
+        construirTecladoOscuro();
     }
 
-    private void construirTecladoKawaii() {
+    // Métodos auxiliares para aplicar el estilo a los componentes
+    private JLabel crearLabelOscuro(String texto, Font fuente) {
+        JLabel lbl = new JLabel(texto);
+        lbl.setForeground(colorTextoGeneral);
+        lbl.setFont(fuente);
+        return lbl;
+    }
+
+    private JTextField crearTextFieldOscuro(Font fuente, javax.swing.border.Border borde) {
+        JTextField txt = new JTextField();
+        txt.setFont(fuente);
+        txt.setBorder(borde);
+        txt.setBackground(colorCajasTexto);
+        txt.setForeground(colorTextoGeneral);
+        txt.setCaretColor(colorBordeNeón); // Cursor parpadeante color neón
+        return txt;
+    }
+
+    private void configurarRadio(JRadioButton rb, Font fuente) {
+        rb.setOpaque(false);
+        rb.setForeground(colorTextoGeneral);
+        rb.setFont(fuente);
+    }
+
+    private void construirTecladoOscuro() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(6, 6, 6, 6);
@@ -115,8 +171,10 @@ public class CalculatorView extends JFrame {
 
         String[] funciones = {"sin(", "cos(", "tan(", "ln(", "x", "y"};
         for (int i = 0; i < funciones.length; i++) {
-            gbc.gridx = i; gbc.gridy = 0;
-            botonesTeclado[i] = new BotonRedondeado(funciones[i], colorFunciones);
+            gbc.gridx = i;
+            gbc.gridy = 0;
+            botonesTeclado[i] = new BotonRedondeado(funciones[i], colorBtnOperadores);
+            botonesTeclado[i].setForeground(colorTextoGeneral);
             panelTeclado.add(botonesTeclado[i], gbc);
         }
 
@@ -140,15 +198,18 @@ public class CalculatorView extends JFrame {
                 gbc.gridheight = 1;
 
                 if (txt.equals("=")) {
-                    btnCalcular = new BotonRedondeado(txt, colorAcciones);
+                    btnCalcular = new BotonRedondeado(txt, colorBtnAccionPrincipal);
+                    btnCalcular.setForeground(Color.BLACK); // Contraste con el verde neón
                     gbc.gridheight = 2;
                     panelTeclado.add(btnCalcular, gbc);
                 } else if (txt.matches("[0-9]")) {
-                    botonesTeclado[btnIndex] = new BotonRedondeado(txt, colorNumeros);
+                    botonesTeclado[btnIndex] = new BotonRedondeado(txt, colorBtnNumeros);
+                    botonesTeclado[btnIndex].setForeground(colorTextoGeneral);
                     panelTeclado.add(botonesTeclado[btnIndex], gbc);
                     btnIndex++;
                 } else {
-                    botonesTeclado[btnIndex] = new BotonRedondeado(txt, colorOperadores);
+                    botonesTeclado[btnIndex] = new BotonRedondeado(txt, colorBtnOperadores);
+                    botonesTeclado[btnIndex].setForeground(colorTextoGeneral);
                     panelTeclado.add(botonesTeclado[btnIndex], gbc);
                     btnIndex++;
                 }
@@ -158,16 +219,40 @@ public class CalculatorView extends JFrame {
         gbc.gridheight = 1;
         gbc.gridy = 4;
 
-        gbc.gridx = 0; gbc.gridwidth = 2;
-        botonesTeclado[18] = new BotonRedondeado("0", colorNumeros);
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        botonesTeclado[18] = new BotonRedondeado("0", colorBtnNumeros);
+        botonesTeclado[18].setForeground(colorTextoGeneral);
         panelTeclado.add(botonesTeclado[18], gbc);
 
-        gbc.gridx = 2; gbc.gridwidth = 1;
-        botonesTeclado[19] = new BotonRedondeado(".", colorNumeros);
+        gbc.gridx = 2;
+        gbc.gridwidth = 1;
+        botonesTeclado[19] = new BotonRedondeado(".", colorBtnNumeros);
+        botonesTeclado[19].setForeground(colorTextoGeneral);
         panelTeclado.add(botonesTeclado[19], gbc);
 
-        gbc.gridx = 4; gbc.gridwidth = 1;
-        btnLimpiar = new BotonRedondeado("C", colorAcciones);
+        gbc.gridx = 4;
+        gbc.gridwidth = 1;
+        btnLimpiar = new BotonRedondeado("C", colorBtnAccionSecundaria);
+        btnLimpiar.setForeground(Color.WHITE);
         panelTeclado.add(btnLimpiar, gbc);
+    }
+
+    // --- NUEVA CLASE INTERNA PARA EL DEGRADADO OSCURO ---
+    class PanelDegradado extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+            // Degradado de negro a morado oscuro (estilo la imagen de referencia)
+            Color colorSuperior = Color.decode("#0F0D1C");
+            Color colorInferior = Color.decode("#2E1E3B");
+
+            GradientPaint gp = new GradientPaint(0, 0, colorSuperior, 0, getHeight(), colorInferior);
+            g2d.setPaint(gp);
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+        }
     }
 }

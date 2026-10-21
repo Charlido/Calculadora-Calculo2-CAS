@@ -5,6 +5,7 @@ import view.CalculatorView;
 import javax.swing.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import model.Polinomio;
 
 public class CalculatorController {
     private final CalculatorView view;
@@ -56,6 +57,12 @@ public class CalculatorController {
             audio.reproducirSonidoClick();
             mostrarManualUsuario();
         });
+
+        // NUEVO: Evento para el botón de graficar
+        view.btnGraficar.addActionListener(e -> {
+            audio.reproducirSonidoClick();
+            mostrarGrafica();
+        });
     }
 
     private void actualizarEstadoCampos() {
@@ -96,13 +103,11 @@ public class CalculatorController {
         String var = view.rbX.isSelected() ? "x" : "y";
         int modo = view.comboModo.getSelectedIndex();
 
-        // 1. Validaciones previas de la UI
         if (f.isEmpty()) {
             JOptionPane.showMessageDialog(view, "Debes ingresar una función principal en f(var).", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // 2. Ejecución con manejo de excepciones (TRY-CATCH MULTIPLE)
         try {
             String latexResult = model.calcularLaTeX(modo, f, g, a, b, var);
             org.scilab.forge.jlatexmath.TeXFormula formula = new org.scilab.forge.jlatexmath.TeXFormula(latexResult);
@@ -110,179 +115,164 @@ public class CalculatorController {
             view.lblRenderMath.setIcon(icon);
 
         } catch (IllegalArgumentException ex) {
-            // Este catch atrapa los errores de nuestro Parser y de los Límites de integración
             view.lblRenderMath.setIcon(null);
             JOptionPane.showMessageDialog(view, ex.getMessage(), "Error de Ingreso", JOptionPane.WARNING_MESSAGE);
 
         } catch (Exception ex) {
-            // Este catch atrapa cualquier otro error inesperado (ej. JLaTeXMath fallando)
             view.lblRenderMath.setIcon(null);
             JOptionPane.showMessageDialog(view, "No se pudo renderizar la fórmula matemática.\nDetalle: " + ex.getMessage(), "Error Interno", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    // NUEVO: Método para graficar la función
+    private void mostrarGrafica() {
+        String f = view.txtF.getText().trim();
+
+        if (f.isEmpty()) {
+            JOptionPane.showMessageDialog(view, "Debes ingresar una función f(var) para graficar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            // Quitamos 'model.' para evitar que Java lo confunda con tu variable MathEngine
+            Polinomio polinomio = Polinomio.parse(f);
+
+            JDialog dialogGrafica = new JDialog(view, "Gráfica de la Función", true);
+            dialogGrafica.setSize(600, 500);
+            dialogGrafica.setLocationRelativeTo(view);
+            dialogGrafica.setLayout(new java.awt.BorderLayout());
+
+            JPanel panelInfo = new JPanel();
+            panelInfo.setBackground(java.awt.Color.decode("#4A5264"));
+            JLabel lblTitulo = new JLabel("Visualización de: f(x) = " + f);
+            lblTitulo.setForeground(java.awt.Color.WHITE);
+            lblTitulo.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 16));
+            panelInfo.add(lblTitulo);
+
+            view.components.PanelGrafico grafico = new view.components.PanelGrafico(polinomio);
+
+            dialogGrafica.add(panelInfo, java.awt.BorderLayout.NORTH);
+            dialogGrafica.add(grafico, java.awt.BorderLayout.CENTER);
+            dialogGrafica.setVisible(true);
+
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(view, "Error de sintaxis matemática. Revisa la función antes de graficar.", "Error de Graficador", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void mostrarManualUsuario() {
         JDialog dialogManual = new JDialog(view, "Manual de Usuario", true);
-        dialogManual.setSize(500, 600);
+        dialogManual.setSize(600, 700); // Ventana un poco más grande para que quepa el texto ampliado
         dialogManual.setLocationRelativeTo(view);
-        dialogManual.getContentPane().setBackground(new java.awt.Color(208, 232, 242));
+        dialogManual.getContentPane().setBackground(java.awt.Color.decode("#0F0D1C"));
 
         JTextPane textoManual = new JTextPane();
         textoManual.setContentType("text/html");
         textoManual.setEditable(false);
-        textoManual.setBackground(new java.awt.Color(255, 255, 255));
+        textoManual.setBackground(java.awt.Color.decode("#0F0D1C"));
 
         String htmlContent = "<html>\n" +
-                "<body style=\"font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #383C3F; background-color: #FFFFFF; margin: 0; padding: 15px;\">\n" +
+                "<body style=\"font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #D1D1E9; background-color: #0F0D1C; margin: 0; padding: 20px;\">\n" +
                 "\n" +
-                "    <!-- ENCABEZADO ESTILO BROCHURE GEOMÉTRICO -->\n" +
-                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 18px;\">\n" +
+                "    <!-- ENCABEZADO CYBERPUNK -->\n" +
+                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 25px;\">\n" +
                 "        <tr>\n" +
-                "            <td bgcolor=\"#4A5264\" align=\"center\" valign=\"middle\" style=\"background-color: #4A5264; padding: 20px; color: #FFFFFF;\">\n" +
-                "                <b style=\"font-size: 18px; letter-spacing: 3px;\">MANUAL DE USUARIO</b>\n" +
+                "            <td bgcolor=\"#1E1B3A\" align=\"center\" valign=\"middle\" style=\"background-color: #1E1B3A; padding: 25px; border: 2px solid #00E676;\">\n" +
+                "                <b style=\"font-size: 22px; letter-spacing: 4px; color: #00E676;\">MANUAL DE USUARIO</b>\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
+
                 "    </table>\n" +
                 "\n" +
                 "    <!-- SECCIÓN 1 -->\n" +
-                "    <div style=\"color: #4A5264; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 42px; margin-bottom: 4px;\">\n" +
-                "        SELECCIÓN DEL MODO DE OPERACIÓN\n" +
+                "    <div style=\"color: #00E676; font-size: 15px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 45px; margin-bottom: 5px;\">\n" +
+                "        1. SELECCIÓN DEL MODO DE OPERACIÓN\n" +
                 "    </div>\n" +
-                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 16px;\">\n" +
+                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 20px;\">\n" +
                 "        <tr>\n" +
-                "            <td width=\"38\" valign=\"middle\" align=\"center\" style=\"font-size: 24px; font-weight: bold; color: #383C3F; padding-right: 6px;\">\n" +
-                "                1\n" +
-                "            </td>\n" +
-                "            <td bgcolor=\"#EFECE6\" style=\"background-color: #EFECE6; padding: 10px 12px; color: #383C3F; line-height: 1.4;\">\n" +
-                "                En la parte superior, utiliza el menú desplegable <b>Modo de Operación</b> para elegir el cálculo:\n" +
-                "                <ul style=\"margin-top: 5px; margin-bottom: 5px; padding-left: 18px;\">\n" +
-                "                    <li><b>Derivada Simbólica:</b> Calcula la derivada exacta del polinomio.</li>\n" +
-                "                    <li><b>Integral Indefinida:</b> Encuentra la antiderivada.</li>\n" +
-                "                    <li><b>Área / Integral Definida:</b> Calcula el área bajo la curva o entre dos curvas en un intervalo <code>[a, b]</code>.</li>\n" +
-                "                </ul>\n" +
-                "            </td>\n" +
-                "            <td width=\"8\" bgcolor=\"#383C3F\" style=\"background-color: #383C3F;\">&nbsp;</td>\n" +
-                "            <td width=\"32\" bgcolor=\"#8FA4A6\" align=\"center\" valign=\"middle\" style=\"background-color: #8FA4A6; color: #FFFFFF; font-size: 14px; font-weight: bold;\">\n" +
+                "            <td width=\"45\" valign=\"top\" align=\"center\" style=\"font-size: 28px; font-weight: bold; color: #E91E63; padding-right: 10px; padding-top: 2px;\">\n" +
                 "                &#9881;\n" +
+                "            </td>\n" +
+                "            <td bgcolor=\"#1E1B3A\" style=\"background-color: #1E1B3A; padding: 15px; color: #D1D1E9; line-height: 1.5; border-left: 3px solid #E91E63;\">\n" +
+                "                En la parte superior, utiliza el menú desplegable para elegir el cálculo exacto que deseas realizar:\n" +
+                "                <ul style=\"margin-top: 8px; margin-bottom: 0; padding-left: 20px;\">\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Derivada Simbólica:</b> Calcula la derivada exacta del polinomio.</li>\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Integral Indefinida:</b> Encuentra la antiderivada (+ C).</li>\n" +
+                "                    <li><b style=\"color:#FFFFFF;\">Área (Integral Definida):</b> Calcula el área bajo o entre curvas en un intervalo específico.</li>\n" +
+                "                </ul>\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
                 "    </table>\n" +
                 "\n" +
                 "    <!-- SECCIÓN 2 -->\n" +
-                "    <div style=\"color: #4A5264; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 42px; margin-bottom: 4px;\">\n" +
-                "        ELECCIÓN DE LA VARIABLE (DX / DY)\n" +
+                "    <div style=\"color: #00E676; font-size: 15px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 45px; margin-bottom: 5px;\">\n" +
+                "        2. ELECCIÓN DE VARIABLE (DX / DY)\n" +
                 "    </div>\n" +
-                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 16px;\">\n" +
+                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 20px;\">\n" +
                 "        <tr>\n" +
-                "            <td width=\"38\" valign=\"middle\" align=\"center\" style=\"font-size: 24px; font-weight: bold; color: #383C3F; padding-right: 6px;\">\n" +
-                "                2\n" +
+                "            <td width=\"45\" valign=\"top\" align=\"center\" style=\"font-size: 28px; font-weight: bold; color: #E91E63; padding-right: 10px;\">\n" +
+                "                &#119909;\n" +
                 "            </td>\n" +
-                "            <td bgcolor=\"#EFECE6\" style=\"background-color: #EFECE6; padding: 10px 12px; color: #383C3F; line-height: 1.4;\">\n" +
-                "                Debajo del modo, selecciona respecto a qué variable deseas derivar o integrar:\n" +
-                "                <ul style=\"margin-top: 5px; margin-bottom: 5px; padding-left: 18px;\">\n" +
-                "                    <li>Marca <b>dx</b> si tu función depende de <b>x</b> (Ej: <code style=\"background-color: #FFFFFF; padding: 1px 4px;\">3x^2 + 2x</code>).</li>\n" +
-                "                    <li>Marca <b>dy</b> si tu función depende de <b>y</b> (Ej: <code style=\"background-color: #FFFFFF; padding: 1px 4px;\">y^3 - 5y</code>).</li>\n" +
-                "                </ul>\n" +
-                "                <b style=\"color: #4A5264;\">¡Importante!:</b> Asegúrate de que la letra coincida con la variable seleccionada.\n" +
-                "            </td>\n" +
-                "            <td width=\"8\" bgcolor=\"#383C3F\" style=\"background-color: #383C3F;\">&nbsp;</td>\n" +
-                "            <td width=\"32\" bgcolor=\"#8FA4A6\" align=\"center\" valign=\"middle\" style=\"background-color: #8FA4A6; color: #FFFFFF; font-size: 12px; font-weight: bold;\">\n" +
-                "                dx\n" +
+                "            <td bgcolor=\"#1E1B3A\" style=\"background-color: #1E1B3A; padding: 15px; color: #D1D1E9; line-height: 1.5; border-left: 3px solid #E91E63;\">\n" +
+                "                Selecciona respecto a qué variable se operará. Marca <b style=\"color:#FFFFFF;\">dx</b> si tu función utiliza la letra <b>x</b> (Ej: 3x^2). Marca <b style=\"color:#FFFFFF;\">dy</b> si tu función utiliza la letra <b>y</b> (Ej: 5y^3). <span style=\"color: #E91E63;\">Es vital que la variable elegida coincida con la letra escrita en tu función.</span>\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
                 "    </table>\n" +
                 "\n" +
                 "    <!-- SECCIÓN 3 -->\n" +
-                "    <div style=\"color: #4A5264; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 42px; margin-bottom: 4px;\">\n" +
-                "        INGRESO DE FUNCIONES: F(VAR) Y G(VAR)\n" +
+                "    <div style=\"color: #00E676; font-size: 15px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 45px; margin-bottom: 5px;\">\n" +
+                "        3. SINTAXIS MATEMÁTICA CORRECTA\n" +
                 "    </div>\n" +
-                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 16px;\">\n" +
+                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 20px;\">\n" +
                 "        <tr>\n" +
-                "            <td width=\"38\" valign=\"middle\" align=\"center\" style=\"font-size: 24px; font-weight: bold; color: #383C3F; padding-right: 6px;\">\n" +
-                "                3\n" +
+                "            <td width=\"45\" valign=\"top\" align=\"center\" style=\"font-size: 28px; font-weight: bold; color: #E91E63; padding-right: 10px;\">\n" +
+                "                &#9998;\n" +
                 "            </td>\n" +
-                "            <td bgcolor=\"#EFECE6\" style=\"background-color: #EFECE6; padding: 10px 12px; color: #383C3F; line-height: 1.4;\">\n" +
-                "                <ul style=\"margin-top: 2px; margin-bottom: 2px; padding-left: 18px;\">\n" +
-                "                    <li><b>Función f(var):</b> Casilla principal para ingresar tu polinomio.</li>\n" +
-                "                    <li><b>Función g(var):</b> Se activa al calcular área entre dos curvas.</li>\n" +
+                "            <td bgcolor=\"#1E1B3A\" style=\"background-color: #1E1B3A; padding: 15px; color: #D1D1E9; line-height: 1.5; border-left: 3px solid #E91E63;\">\n" +
+                "                Para que el motor POO interprete tus polinomios correctamente en <b>f(var)</b> o <b>g(var)</b>, sigue estas estrictas reglas:\n" +
+                "                <ul style=\"margin-top: 8px; margin-bottom: 0; padding-left: 20px;\">\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Exponentes:</b> Usa el símbolo <code>^</code> para elevar a una potencia (Ejemplo: <code style=\"color: #00E676;\">x^3</code>).</li>\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Sin Asteriscos:</b> Escribe coeficientes y variables unidos, sin símbolos de multiplicación (Ejemplo Correcto: <code style=\"color: #00E676;\">3x^2 - 5x + 2</code>).</li>\n" +
+                "                    <li><b style=\"color:#FFFFFF;\">Sin Paréntesis:</b> Ingresa el polinomio completamente expandido.</li>\n" +
                 "                </ul>\n" +
-                "            </td>\n" +
-                "            <td width=\"8\" bgcolor=\"#383C3F\" style=\"background-color: #383C3F;\">&nbsp;</td>\n" +
-                "            <td width=\"32\" bgcolor=\"#8FA4A6\" align=\"center\" valign=\"middle\" style=\"background-color: #8FA4A6; color: #FFFFFF; font-size: 13px; font-weight: bold;\">\n" +
-                "                <i>f(x)</i>\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
                 "    </table>\n" +
                 "\n" +
                 "    <!-- SECCIÓN 4 -->\n" +
-                "    <div style=\"color: #4A5264; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 42px; margin-bottom: 4px;\">\n" +
-                "        ¿CÓMO ESCRIBIR LAS FUNCIONES CORRECTAMENTE?\n" +
+                "    <div style=\"color: #00E676; font-size: 15px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 45px; margin-bottom: 5px;\">\n" +
+                "        4. LÍMITES DE INTEGRACIÓN\n" +
                 "    </div>\n" +
-                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 16px;\">\n" +
+                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 20px;\">\n" +
                 "        <tr>\n" +
-                "            <td width=\"38\" valign=\"middle\" align=\"center\" style=\"font-size: 24px; font-weight: bold; color: #383C3F; padding-right: 6px;\">\n" +
-                "                4\n" +
+                "            <td width=\"45\" valign=\"top\" align=\"center\" style=\"font-size: 28px; font-weight: bold; color: #E91E63; padding-right: 10px;\">\n" +
+                "                &#8747;\n" +
                 "            </td>\n" +
-                "            <td bgcolor=\"#EFECE6\" style=\"background-color: #EFECE6; padding: 10px 12px; color: #383C3F; line-height: 1.4;\">\n" +
-                "                Para que el motor POO interprete los polinomios, respeta estas reglas:\n" +
-                "                <ul style=\"margin-top: 5px; margin-bottom: 2px; padding-left: 18px;\">\n" +
-                "                    <li><b>Exponentes (<code>^</code>):</b> Usa el símbolo <code>^</code> (Ejemplo: <code style=\"background-color: #FFFFFF; padding: 1px 4px;\">x^2</code>).</li>\n" +
-                "                    <li><b>Sin Asteriscos:</b> Escribe los coeficientes y variables juntos (Ejemplo: <code style=\"background-color: #FFFFFF; padding: 1px 4px;\">3x^2 - 5x + 2</code>).</li>\n" +
-                "                    <li><b>Sin Paréntesis:</b> Ingresa el polinomio en su forma expandida.</li>\n" +
-                "                </ul>\n" +
-                "            </td>\n" +
-                "            <td width=\"8\" bgcolor=\"#383C3F\" style=\"background-color: #383C3F;\">&nbsp;</td>\n" +
-                "            <td width=\"32\" bgcolor=\"#8FA4A6\" align=\"center\" valign=\"middle\" style=\"background-color: #8FA4A6; color: #FFFFFF; font-size: 14px; font-weight: bold;\">\n" +
-                "                x<sup>n</sup>\n" +
+                "            <td bgcolor=\"#1E1B3A\" style=\"background-color: #1E1B3A; padding: 15px; color: #D1D1E9; line-height: 1.5; border-left: 3px solid #E91E63;\">\n" +
+                "                Al seleccionar cálculos de Área (Integrales Definidas), las casillas <b>'a'</b> y <b>'b'</b> se habilitarán. Ingresa el <b>Límite Inferior (a)</b> y el <b>Límite Superior (b)</b> utilizando números enteros o decimales. El programa calculará el área neta entre ambos puntos del plano.\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
                 "    </table>\n" +
                 "\n" +
                 "    <!-- SECCIÓN 5 -->\n" +
-                "    <div style=\"color: #4A5264; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 42px; margin-bottom: 4px;\">\n" +
-                "        LÍMITES DE INTEGRACIÓN (A Y B)\n" +
+                "    <div style=\"color: #00E676; font-size: 15px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 45px; margin-bottom: 5px;\">\n" +
+                "        5. CONTROLES Y GRAFICADOR NATIVO\n" +
                 "    </div>\n" +
-                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 16px;\">\n" +
+                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 25px;\">\n" +
                 "        <tr>\n" +
-                "            <td width=\"38\" valign=\"middle\" align=\"center\" style=\"font-size: 24px; font-weight: bold; color: #383C3F; padding-right: 6px;\">\n" +
-                "                5\n" +
+                "            <td width=\"45\" valign=\"top\" align=\"center\" style=\"font-size: 28px; font-weight: bold; color: #E91E63; padding-right: 10px;\">\n" +
+                "                &#128433;\n" +
                 "            </td>\n" +
-                "            <td bgcolor=\"#EFECE6\" style=\"background-color: #EFECE6; padding: 10px 12px; color: #383C3F; line-height: 1.4;\">\n" +
-                "                Cuando selecciones una operación definida (como <i>Área</i>), se habilitarán los límites:\n" +
-                "                <ul style=\"margin-top: 5px; margin-bottom: 2px; padding-left: 18px;\">\n" +
-                "                    <li><b>Límite inferior a:</b> Valor donde inicia el intervalo.</li>\n" +
-                "                    <li><b>Límite superior b:</b> Valor donde termina el intervalo.</li>\n" +
+                "            <td bgcolor=\"#1E1B3A\" style=\"background-color: #1E1B3A; padding: 15px; color: #D1D1E9; line-height: 1.5; border-left: 3px solid #E91E63;\">\n" +
+                "                <ul style=\"margin-top: 0; margin-bottom: 0; padding-left: 20px;\">\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Calcular (=):</b> Procesa las funciones y genera la imagen matemática en el panel central.</li>\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Limpiar (C):</b> Borra todas las casillas para iniciar un nuevo cálculo.</li>\n" +
+                "                    <li><b style=\"color:#FFFFFF;\">Botón Graficar f(x):</b> Abre una ventana especial que dibuja dinámicamente la curva de tu polinomio en un plano cartesiano estilo Neón.</li>\n" +
                 "                </ul>\n" +
-                "            </td>\n" +
-                "            <td width=\"8\" bgcolor=\"#383C3F\" style=\"background-color: #383C3F;\">&nbsp;</td>\n" +
-                "            <td width=\"32\" bgcolor=\"#8FA4A6\" align=\"center\" valign=\"middle\" style=\"background-color: #8FA4A6; color: #FFFFFF; font-size: 15px; font-weight: bold;\">\n" +
-                "                &int;\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
                 "    </table>\n" +
-                "\n" +
-                "    <!-- SECCIÓN 6 -->\n" +
-                "    <div style=\"color: #4A5264; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 42px; margin-bottom: 4px;\">\n" +
-                "        USO DEL TECLADO EN PANTALLA Y CONTROLES\n" +
-                "    </div>\n" +
-                "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 18px;\">\n" +
-                "        <tr>\n" +
-                "            <td width=\"38\" valign=\"middle\" align=\"center\" style=\"font-size: 24px; font-weight: bold; color: #383C3F; padding-right: 6px;\">\n" +
-                "                6\n" +
-                "            </td>\n" +
-                "            <td bgcolor=\"#EFECE6\" style=\"background-color: #EFECE6; padding: 10px 12px; color: #383C3F; line-height: 1.4;\">\n" +
-                "                Puedes ingresar las expresiones con el teclado de tu computadora o con los botones en pantalla:\n" +
-                "                <ul style=\"margin-top: 5px; margin-bottom: 2px; padding-left: 18px;\">\n" +
-                "                    <li><b>Botón <code>=</code> (Calcular):</b> Ejecuta la operación y la renderiza en el <b>Resultado Exacto</b>.</li>\n" +
-                "                    <li><b>Botón <code>C</code> (Limpiar):</b> Vacía todas las casillas para iniciar un cálculo nuevo.</li>\n" +
-                "                </ul>\n" +
-                "            </td>\n" +
-                "            <td width=\"8\" bgcolor=\"#383C3F\" style=\"background-color: #383C3F;\">&nbsp;</td>\n" +
-                "            <td width=\"32\" bgcolor=\"#8FA4A6\" align=\"center\" valign=\"middle\" style=\"background-color: #8FA4A6; color: #FFFFFF; font-size: 15px; font-weight: bold;\">\n" +
-                "                =\n" +
-                "            </td>\n" +
-                "        </tr>\n" +
-                "    </table>\n" +
+
                 "\n" +
                 "</body>\n" +
                 "</html>";

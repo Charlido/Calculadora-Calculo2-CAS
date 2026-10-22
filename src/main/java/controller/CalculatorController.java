@@ -1,11 +1,16 @@
 package controller;
 
 import model.MathEngine;
+import model.Polinomio;
+import org.scilab.forge.jlatexmath.TeXConstants;
+import org.scilab.forge.jlatexmath.TeXFormula;
+import org.scilab.forge.jlatexmath.TeXIcon;
 import view.CalculatorView;
+
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import model.Polinomio;
 
 public class CalculatorController {
     private final CalculatorView view;
@@ -25,6 +30,7 @@ public class CalculatorController {
             @Override
             public void focusGained(FocusEvent e) {
                 view.campoActivo = (JTextField) e.getSource();
+                view.actualizarEstiloCampos();
             }
         };
         view.txtF.addFocusListener(tracker);
@@ -58,7 +64,6 @@ public class CalculatorController {
             mostrarManualUsuario();
         });
 
-        // NUEVO: Evento para el botón de graficar
         view.btnGraficar.addActionListener(e -> {
             audio.reproducirSonidoClick();
             mostrarGrafica();
@@ -75,11 +80,17 @@ public class CalculatorController {
         view.txtB.setEnabled(requiereLimites);
         view.txtG.setEnabled(requiereG);
 
-        if (!requiereLimites) { view.txtA.setText(""); view.txtB.setText(""); }
-        if (!requiereG) view.txtG.setText("");
+        if (!requiereLimites) {
+            view.txtA.setText("");
+            view.txtB.setText("");
+        }
+        if (!requiereG) {
+            view.txtG.setText("");
+        }
 
         view.campoActivo = view.txtF;
         view.txtF.requestFocus();
+        view.actualizarEstiloCampos();
     }
 
     private void escribirEnCampo(String texto) {
@@ -90,9 +101,11 @@ public class CalculatorController {
     }
 
     private void limpiarInterfaz() {
-        view.txtF.setText(""); view.txtG.setText("");
-        view.txtA.setText(""); view.txtB.setText("");
-        view.lblRenderMath.setIcon(null);
+        view.txtF.setText("");
+        view.txtG.setText("");
+        view.txtA.setText("");
+        view.txtB.setText("");
+        view.mostrarPlaceholderResultado();
     }
 
     private void ejecutarCalculo() {
@@ -110,23 +123,26 @@ public class CalculatorController {
 
         try {
             String latexResult = model.calcularLaTeX(modo, f, g, a, b, var);
-            org.scilab.forge.jlatexmath.TeXFormula formula = new org.scilab.forge.jlatexmath.TeXFormula(latexResult);
-            Icon icon = formula.createTeXIcon(org.scilab.forge.jlatexmath.TeXConstants.STYLE_DISPLAY, 22);
-            view.lblRenderMath.setIcon(icon);
+            TeXFormula formula = new TeXFormula(latexResult);
+            TeXIcon icon = formula.createTeXIcon(TeXConstants.STYLE_DISPLAY, 24);
+            icon.setForeground(Color.decode("#00E676")); // Fórmula en verde neón sobre visor oscuro
+            view.mostrarIconoResultado(icon);
 
         } catch (IllegalArgumentException ex) {
-            view.lblRenderMath.setIcon(null);
+            view.mostrarPlaceholderResultado();
             JOptionPane.showMessageDialog(view, ex.getMessage(), "Error de Ingreso", JOptionPane.WARNING_MESSAGE);
 
         } catch (Exception ex) {
-            view.lblRenderMath.setIcon(null);
+            view.mostrarPlaceholderResultado();
             JOptionPane.showMessageDialog(view, "No se pudo renderizar la fórmula matemática.\nDetalle: " + ex.getMessage(), "Error Interno", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // NUEVO: Método para graficar la función
     private void mostrarGrafica() {
         String f = view.txtF.getText().trim();
+        String g = view.txtG.getText().trim();
+        String a = view.txtA.getText().trim();
+        String b = view.txtB.getText().trim();
 
         if (f.isEmpty()) {
             JOptionPane.showMessageDialog(view, "Debes ingresar una función f(var) para graficar.", "Aviso", JOptionPane.WARNING_MESSAGE);
@@ -134,25 +150,49 @@ public class CalculatorController {
         }
 
         try {
-            // Quitamos 'model.' para evitar que Java lo confunda con tu variable MathEngine
-            Polinomio polinomio = Polinomio.parse(f);
+            Polinomio polinomioF = Polinomio.parse(f);
+            Polinomio polinomioG = null;
+            if (view.txtG.isEnabled() && !g.isEmpty()) {
+                polinomioG = Polinomio.parse(g);
+            }
+
+            Double limA = null;
+            Double limB = null;
+            if (view.txtA.isEnabled() && !a.isEmpty() && !b.isEmpty()) {
+                try {
+                    limA = Double.parseDouble(a);
+                    limB = Double.parseDouble(b);
+                } catch (NumberFormatException ignored) {
+                    // Si los límites aún no son válidos, graficamos igualmente la curva
+                }
+            }
 
             JDialog dialogGrafica = new JDialog(view, "Gráfica de la Función", true);
-            dialogGrafica.setSize(600, 500);
+            dialogGrafica.setSize(680, 540);
             dialogGrafica.setLocationRelativeTo(view);
-            dialogGrafica.setLayout(new java.awt.BorderLayout());
+            dialogGrafica.setLayout(new BorderLayout());
 
-            JPanel panelInfo = new JPanel();
-            panelInfo.setBackground(java.awt.Color.decode("#4A5264"));
-            JLabel lblTitulo = new JLabel("Visualización de: f(x) = " + f);
-            lblTitulo.setForeground(java.awt.Color.WHITE);
-            lblTitulo.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 16));
+            JPanel panelInfo = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+            panelInfo.setBackground(Color.decode("#1E1B3A"));
+            panelInfo.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#00E676")));
+
+            StringBuilder titulo = new StringBuilder("f(x) = ").append(f);
+            if (polinomioG != null) {
+                titulo.append("   |   g(x) = ").append(g);
+            }
+            if (limA != null && limB != null) {
+                titulo.append(String.format("   |   Intervalo [%.2f, %.2f]", limA, limB));
+            }
+
+            JLabel lblTitulo = new JLabel(titulo.toString());
+            lblTitulo.setForeground(Color.decode("#00E676"));
+            lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 15));
             panelInfo.add(lblTitulo);
 
-            view.components.PanelGrafico grafico = new view.components.PanelGrafico(polinomio);
+            view.components.PanelGrafico grafico = new view.components.PanelGrafico(polinomioF, polinomioG, limA, limB);
 
-            dialogGrafica.add(panelInfo, java.awt.BorderLayout.NORTH);
-            dialogGrafica.add(grafico, java.awt.BorderLayout.CENTER);
+            dialogGrafica.add(panelInfo, BorderLayout.NORTH);
+            dialogGrafica.add(grafico, BorderLayout.CENTER);
             dialogGrafica.setVisible(true);
 
         } catch (IllegalArgumentException ex) {
@@ -162,14 +202,14 @@ public class CalculatorController {
 
     private void mostrarManualUsuario() {
         JDialog dialogManual = new JDialog(view, "Manual de Usuario", true);
-        dialogManual.setSize(600, 700); // Ventana un poco más grande para que quepa el texto ampliado
+        dialogManual.setSize(600, 700);
         dialogManual.setLocationRelativeTo(view);
-        dialogManual.getContentPane().setBackground(java.awt.Color.decode("#0F0D1C"));
+        dialogManual.getContentPane().setBackground(Color.decode("#0F0D1C"));
 
         JTextPane textoManual = new JTextPane();
         textoManual.setContentType("text/html");
         textoManual.setEditable(false);
-        textoManual.setBackground(java.awt.Color.decode("#0F0D1C"));
+        textoManual.setBackground(Color.decode("#0F0D1C"));
 
         String htmlContent = "<html>\n" +
                 "<body style=\"font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #D1D1E9; background-color: #0F0D1C; margin: 0; padding: 20px;\">\n" +
@@ -181,7 +221,6 @@ public class CalculatorController {
                 "                <b style=\"font-size: 22px; letter-spacing: 4px; color: #00E676;\">MANUAL DE USUARIO</b>\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
-
                 "    </table>\n" +
                 "\n" +
                 "    <!-- SECCIÓN 1 -->\n" +
@@ -267,20 +306,20 @@ public class CalculatorController {
                 "                <ul style=\"margin-top: 0; margin-bottom: 0; padding-left: 20px;\">\n" +
                 "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Calcular (=):</b> Procesa las funciones y genera la imagen matemática en el panel central.</li>\n" +
                 "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Limpiar (C):</b> Borra todas las casillas para iniciar un nuevo cálculo.</li>\n" +
-                "                    <li><b style=\"color:#FFFFFF;\">Botón Graficar f(x):</b> Abre una ventana especial que dibuja dinámicamente la curva de tu polinomio en un plano cartesiano estilo Neón.</li>\n" +
+                "                    <li><b style=\"color:#FFFFFF;\">Botón Graficar:</b> Abre una ventana que dibuja las curvas f(x), g(x), escalas y el área sombreada en [a, b].</li>\n" +
                 "                </ul>\n" +
                 "            </td>\n" +
                 "        </tr>\n" +
                 "    </table>\n" +
-
                 "\n" +
                 "</body>\n" +
                 "</html>";
 
         textoManual.setText(htmlContent);
+        textoManual.setCaretPosition(0);
 
         JScrollPane scrollPane = new JScrollPane(textoManual);
-        scrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
 

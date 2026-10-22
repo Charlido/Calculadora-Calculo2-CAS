@@ -5,23 +5,25 @@ import java.awt.*;
 
 public class BotonRedondeado extends JButton {
     private final Color colorCara;
+    private final Color colorHover;
     private final Color colorSombra;
-    private final int radioRedondeo = 35; // Bordes muy circulares (estilo píldora)
-    private final int profundidadSombra = 6; // Altura del switch mecánico
+    private final int radioRedondeo = 22; // Bordes redondeados modernos y proporcionados
+    private final int profundidadSombra = 5; // Altura del switch mecánico 3D
 
     public BotonRedondeado(String texto, Color colorBase) {
         super(texto);
         this.colorCara = colorBase;
-        // La sombra se calcula oscureciendo dinámicamente el color pastel base
-        this.colorSombra = oscurecerColor(colorBase, 0.25f);
+        this.colorHover = aclararColor(colorBase, 0.16f);
+        this.colorSombra = oscurecerColor(colorBase, 0.35f);
 
         setContentAreaFilled(false);
         setFocusPainted(false);
         setBorderPainted(false);
         setOpaque(false);
+        setRolloverEnabled(true);
 
-        setFont(new Font("Arial Rounded MT Bold", Font.BOLD, 18));
-        setForeground(new Color(80, 80, 80)); // Gris oscuro carbón para contraste suave
+        setFont(new Font("Segoe UI", Font.BOLD, 16));
+        setForeground( new Color(80, 80, 80));
         setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
@@ -32,28 +34,44 @@ public class BotonRedondeado extends JButton {
         return new Color(r, g, b);
     }
 
+    private Color aclararColor(Color color, float factor) {
+        int r = Math.min((int) (color.getRed() + (255 - color.getRed()) * factor), 255);
+        int g = Math.min((int) (color.getGreen() + (255 - color.getGreen()) * factor), 255);
+        int b = Math.min((int) (color.getBlue() + (255 - color.getBlue()) * factor), 255);
+        return new Color(r, g, b);
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
         int ancho = getWidth();
         int alto = getHeight();
-        boolean presionado = getModel().isPressed();
+        ButtonModel model = getModel();
+        boolean presionado = model.isPressed();
+        boolean hover = model.isRollover();
 
-        // Calcular desplazamiento en el eje Y al hacer clic
-        int offsetY = presionado ? profundidadSombra : 0;
+        int offsetY = presionado ? profundidadSombra : (hover ? 1 : 0);
         int alturaCara = alto - profundidadSombra;
 
         // 1. Dibujar la sombra (base fija anclada al fondo)
         g2.setColor(colorSombra);
         g2.fillRoundRect(0, profundidadSombra, ancho, alturaCara, radioRedondeo, radioRedondeo);
 
-        // 2. Dibujar la cara superior (se desplaza hacia abajo si se presiona)
-        g2.setColor(colorCara);
+        // 2. Dibujar la cara superior (cambia de tono en hover y baja al presionar)
+        g2.setColor(hover && !presionado ? colorHover : colorCara);
         g2.fillRoundRect(0, offsetY, ancho, alturaCara, radioRedondeo, radioRedondeo);
 
-        // 3. Dibujar la tipografía con cálculo exacto de centro
+        // 3. Borde sutil de brillo en estado hover
+        if (hover && !presionado) {
+            g2.setColor(new Color(255, 255, 255, 70));
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawRoundRect(1, offsetY + 1, ancho - 3, alturaCara - 3, radioRedondeo, radioRedondeo);
+        }
+
+        // 4. Dibujar la tipografía centrada
         g2.setFont(getFont());
         g2.setColor(getForeground());
         FontMetrics fm = g2.getFontMetrics();

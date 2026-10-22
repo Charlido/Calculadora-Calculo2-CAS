@@ -20,6 +20,11 @@ public class CalculatorController {
     private final CalculatorView view;
     private final MathEngine model;
 
+    // Estado para la animación progresiva de los pasos
+    private List<PasoResolucion> pasosActuales;
+    private int pasosMostrados = 0;
+    private Timer timerPasos;
+
     public CalculatorController(CalculatorView view, MathEngine model) {
         this.view = view;
         this.model = model;
@@ -83,11 +88,6 @@ public class CalculatorController {
             mostrarManualUsuario();
         });
 
-        view.btnPasos.addActionListener(e -> {
-            audio.reproducirSonidoClick();
-            mostrarPasosResolucion();
-        });
-
         view.btnGraficar.addActionListener(e -> {
             audio.reproducirSonidoClick();
             mostrarGrafica();
@@ -143,11 +143,16 @@ public class CalculatorController {
     }
 
     private void limpiarInterfaz() {
+        detenerTimerPasos();
+        pasosActuales = null;
+        pasosMostrados = 0;
+
         view.txtF.setText("");
         view.txtG.setText("");
         view.txtA.setText("");
         view.txtB.setText("");
         view.mostrarPlaceholderResultado();
+        view.limpiarPanelPasos();
     }
 
     private void ejecutarCalculo() {
@@ -164,6 +169,7 @@ public class CalculatorController {
         }
 
         try {
+            // 1. Calcular y mostrar el resultado principal en el visor de la calculadora
             String latexResult = model.calcularLaTeX(modo, f, g, a, b, var);
             TeXFormula formula = new TeXFormula(latexResult);
             int fontSize = latexResult.length() > 45 ? 19 : 23;
@@ -171,92 +177,100 @@ public class CalculatorController {
             icon.setForeground(Color.decode("#00E676"));
             view.mostrarIconoResultado(icon);
 
+            // 2. Generar todos los pasos y desplegarlos progresivamente en el panel derecho
+            iniciarDespliegueProgresivoPasos(modo, f, g, a, b, var);
+
         } catch (IllegalArgumentException ex) {
+            detenerTimerPasos();
             view.mostrarPlaceholderResultado();
+            view.limpiarPanelPasos();
             JOptionPane.showMessageDialog(view, ex.getMessage(), "Error de Ingreso", JOptionPane.WARNING_MESSAGE);
 
         } catch (Exception ex) {
+            detenerTimerPasos();
             view.mostrarPlaceholderResultado();
+            view.limpiarPanelPasos();
             JOptionPane.showMessageDialog(view, "No se pudo renderizar la fórmula matemática.\nDetalle: " + ex.getMessage(), "Error Interno", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void mostrarPasosResolucion() {
-        String f = view.txtF.getText().trim();
-        String g = view.txtG.getText().trim();
-        String a = view.txtA.getText().trim();
-        String b = view.txtB.getText().trim();
-        String var = view.rbX.isSelected() ? "x" : "y";
-        int modo = view.comboModo.getSelectedIndex();
-        String nombreModo = (String) view.comboModo.getSelectedItem();
-
-        if (f.isEmpty()) {
-            JOptionPane.showMessageDialog(view, "Debes ingresar una función en f(var) para ver los pasos de resolución.", "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        try {
-            // También actualizamos el visor principal al consultar los pasos
-            String latexFinal = model.calcularLaTeX(modo, f, g, a, b, var);
-            TeXFormula formulaFinal = new TeXFormula(latexFinal);
-            int mainSize = latexFinal.length() > 45 ? 19 : 23;
-            TeXIcon mainIcon = formulaFinal.createTeXIcon(TeXConstants.STYLE_DISPLAY, mainSize);
-            mainIcon.setForeground(Color.decode("#00E676"));
-            view.mostrarIconoResultado(mainIcon);
-
-            List<PasoResolucion> pasos = model.generarPasosResolucion(modo, f, g, a, b, var);
-
-            JDialog dialogPasos = new JDialog(view, "Procedimiento Paso a Paso - " + nombreModo, true);
-            dialogPasos.setSize(680, 650);
-            dialogPasos.setLocationRelativeTo(view);
-            dialogPasos.setLayout(new BorderLayout());
-            dialogPasos.getContentPane().setBackground(Color.decode("#0F0D1C"));
-
-            // Encabezado del modal de pasos
-            JPanel panelHeader = new JPanel(new BorderLayout());
-            panelHeader.setBackground(Color.decode("#1E1B3A"));
-            panelHeader.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 0, 2, 0, Color.decode("#00B0FF")),
-                    new EmptyBorder(16, 20, 16, 20)
-            ));
-
-            JLabel lblHeaderTitulo = new JLabel("PROCEDIMIENTO DE CÁLCULO: " + nombreModo.toUpperCase(), SwingConstants.CENTER);
-            lblHeaderTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            lblHeaderTitulo.setForeground(Color.decode("#00B0FF"));
-            panelHeader.add(lblHeaderTitulo, BorderLayout.CENTER);
-
-            // Contenedor vertical de tarjetas de pasos
-            JPanel contenedorPasos = new JPanel();
-            contenedorPasos.setLayout(new BoxLayout(contenedorPasos, BoxLayout.Y_AXIS));
-            contenedorPasos.setBackground(Color.decode("#0F0D1C"));
-            contenedorPasos.setBorder(new EmptyBorder(15, 18, 15, 18));
-
-            for (int i = 0; i < pasos.size(); i++) {
-                PasoResolucion paso = pasos.get(i);
-                boolean esUltimo = (i == pasos.size() - 1);
-                contenedorPasos.add(crearTarjetaPaso(paso, esUltimo));
-                contenedorPasos.add(Box.createVerticalStrut(14));
-            }
-
-            JScrollPane scrollPasos = new JScrollPane(contenedorPasos);
-            scrollPasos.setBorder(null);
-            scrollPasos.getVerticalScrollBar().setUnitIncrement(16);
-            scrollPasos.setBackground(Color.decode("#0F0D1C"));
-            scrollPasos.getViewport().setBackground(Color.decode("#0F0D1C"));
-
-            dialogPasos.add(panelHeader, BorderLayout.NORTH);
-            dialogPasos.add(scrollPasos, BorderLayout.CENTER);
-            dialogPasos.setVisible(true);
-
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(view, ex.getMessage(), "Error de Ingreso", JOptionPane.WARNING_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Error al generar los pasos de resolución:\n" + ex.getMessage(), "Error Interno", JOptionPane.ERROR_MESSAGE);
+    private void detenerTimerPasos() {
+        if (timerPasos != null && timerPasos.isRunning()) {
+            timerPasos.stop();
         }
     }
 
+    private void iniciarDespliegueProgresivoPasos(int modo, String f, String g, String a, String b, String var) {
+        detenerTimerPasos();
+        pasosActuales = model.generarPasosResolucion(modo, f, g, a, b, var);
+        pasosMostrados = 0;
+
+        view.contenedorTarjetasPasos.removeAll();
+        view.contenedorTarjetasPasos.revalidate();
+        view.contenedorTarjetasPasos.repaint();
+
+        if (pasosActuales == null || pasosActuales.isEmpty()) {
+            view.limpiarPanelPasos();
+            return;
+        }
+
+        // Mostrar el primer paso de inmediato y revelar los siguientes progresivamente cada 450 ms
+        agregarSiguienteTarjetaPaso();
+
+        if (pasosActuales.size() > 1) {
+            timerPasos = new Timer(450, e -> {
+                if (pasosMostrados < pasosActuales.size()) {
+                    agregarSiguienteTarjetaPaso();
+                } else {
+                    detenerTimerPasos();
+                }
+            });
+            timerPasos.start();
+        }
+    }
+
+    private void agregarSiguienteTarjetaPaso() {
+        if (pasosActuales == null || pasosMostrados >= pasosActuales.size()) {
+            actualizarEstadoProgresoPasos();
+            return;
+        }
+
+        PasoResolucion paso = pasosActuales.get(pasosMostrados);
+        boolean esUltimo = (pasosMostrados == pasosActuales.size() - 1);
+
+        if (pasosMostrados > 0) {
+            view.contenedorTarjetasPasos.add(Box.createVerticalStrut(12));
+        }
+        JPanel tarjeta = crearTarjetaPaso(paso, esUltimo);
+        view.contenedorTarjetasPasos.add(tarjeta);
+        pasosMostrados++;
+
+        view.contenedorTarjetasPasos.revalidate();
+        view.contenedorTarjetasPasos.repaint();
+        actualizarEstadoProgresoPasos();
+
+        // Auto-scroll suave hacia el nuevo paso agregado
+        SwingUtilities.invokeLater(() -> {
+            JScrollBar vertical = view.scrollPasos.getVerticalScrollBar();
+            vertical.setValue(vertical.getMaximum());
+        });
+    }
+
+    private void actualizarEstadoProgresoPasos() {
+        if (pasosActuales == null || pasosActuales.isEmpty()) {
+            view.lblProgresoPasos.setText("Esperando cálculo...");
+            return;
+        }
+
+        int total = pasosActuales.size();
+        String estado = (pasosMostrados == total)
+                ? String.format("✅ Procedimiento completo (%d pasos)", total)
+                : String.format("⏳ Desplegando paso %d de %d...", pasosMostrados, total);
+        view.lblProgresoPasos.setText(estado);
+    }
+
     private JPanel crearTarjetaPaso(PasoResolucion paso, boolean esResultadoFinal) {
-        Color colorBorde = esResultadoFinal ? Color.decode("#00E676") : Color.decode("#4E498A");
+        Color colorBorde = esResultadoFinal ? Color.decode("#00E676") : Color.decode("#00B0FF");
         Color colorTitulo = esResultadoFinal ? Color.decode("#00E676") : Color.decode("#00B0FF");
         Color colorFormula = esResultadoFinal ? Color.decode("#00E676") : Color.WHITE;
 
@@ -264,19 +278,20 @@ public class CalculatorController {
         tarjeta.setBackground(Color.decode("#1A1733"));
         tarjeta.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 4, 0, 0, colorBorde),
-                new EmptyBorder(12, 16, 14, 16)
+                new EmptyBorder(12, 14, 12, 14)
         ));
+        tarjeta.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Encabezado y explicación teórica del paso
         JPanel panelTexto = new JPanel(new BorderLayout(0, 4));
         panelTexto.setOpaque(false);
 
         JLabel lblTitulo = new JLabel(paso.titulo);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblTitulo.setForeground(colorTitulo);
 
-        JLabel lblExplicacion = new JLabel("<html><body style='width: 520px;'>" + paso.explicacion + "</body></html>");
-        lblExplicacion.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JLabel lblExplicacion = new JLabel("<html><body style='width: 410px;'>" + paso.explicacion + "</body></html>");
+        lblExplicacion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblExplicacion.setForeground(Color.decode("#D1D1E9"));
 
         panelTexto.add(lblTitulo, BorderLayout.NORTH);
@@ -289,7 +304,7 @@ public class CalculatorController {
 
         try {
             TeXFormula tf = new TeXFormula(paso.formulaLaTeX);
-            int size = paso.formulaLaTeX.length() > 55 ? 17 : 20;
+            int size = paso.formulaLaTeX.length() > 50 ? 16 : 19;
             TeXIcon icon = tf.createTeXIcon(TeXConstants.STYLE_DISPLAY, size);
             icon.setForeground(colorFormula);
             JLabel lblMath = new JLabel(icon);
@@ -297,7 +312,7 @@ public class CalculatorController {
         } catch (Exception e) {
             JLabel lblFallback = new JLabel(paso.formulaLaTeX);
             lblFallback.setForeground(colorFormula);
-            lblFallback.setFont(new Font("Monospaced", Font.BOLD, 14));
+            lblFallback.setFont(new Font("Monospaced", Font.BOLD, 13));
             panelFormula.add(lblFallback);
         }
 
@@ -448,7 +463,7 @@ public class CalculatorController {
                 "\n" +
                 "    <!-- SECCIÓN 4 -->\n" +
                 "    <div style=\"color: #00E676; font-size: 15px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-left: 45px; margin-bottom: 5px;\">\n" +
-                "        4. CONTROLES, PASOS Y GRAFICADOR\n" +
+                "        4. PANEL LATERAL PASO A PASO Y CONTROLES\n" +
                 "    </div>\n" +
                 "    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 25px;\">\n" +
                 "        <tr>\n" +
@@ -457,9 +472,8 @@ public class CalculatorController {
                 "            </td>\n" +
                 "            <td bgcolor=\"#1E1B3A\" style=\"background-color: #1E1B3A; padding: 15px; color: #D1D1E9; line-height: 1.5; border-left: 3px solid #E91E63;\">\n" +
                 "                <ul style=\"margin-top: 0; margin-bottom: 0; padding-left: 20px;\">\n" +
-                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Calcular (=) o Tecla Enter:</b> Ejecuta el cálculo inmediatamente.</li>\n" +
-                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Pasos (📝):</b> Abre el desglose paso a paso explicando las reglas y teoremas del curso de Cálculo utilizados.</li>\n" +
-                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Borrar (⌫) y Limpiar (C):</b> <code>⌫</code> borra el último carácter o función; <code>C</code> limpia todos los campos.</li>\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Calcular (=) o Enter:</b> Resuelve la expresión y despliega progresivamente todos los pasos en el panel derecho.</li>\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Botón Borrar (⌫) y Limpiar (C):</b> <code>⌫</code> borra el último carácter o función; <code>C</code> limpia todos los campos y el procedimiento.</li>\n" +
                 "                    <li><b style=\"color:#FFFFFF;\">Botón Graficar (📈):</b> Dibuja en el plano cartesiano las curvas f(x), g(x), escalas y el área sombreada en [a, b].</li>\n" +
                 "                </ul>\n" +
                 "            </td>\n" +

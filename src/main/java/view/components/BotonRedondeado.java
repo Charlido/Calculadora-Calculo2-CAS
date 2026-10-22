@@ -7,6 +7,9 @@ public class BotonRedondeado extends JButton {
     private final Color colorCara;
     private final Color colorHover;
     private final Color colorSombra;
+    private final Color colorDeshabilitado = Color.decode("#1E1C36");
+    private final Color colorSombraDeshabilitado = Color.decode("#141226");
+    private final Color colorTextoDeshabilitado = Color.decode("#56527A");
     private final int radioRedondeo = 22; // Bordes redondeados modernos y proporcionados
     private final int profundidadSombra = 5; // Altura del switch mecánico 3D
 
@@ -23,7 +26,7 @@ public class BotonRedondeado extends JButton {
         setRolloverEnabled(true);
 
         setFont(new Font("Segoe UI", Font.BOLD, 16));
-        setForeground( new Color(80, 80, 80));
+        setForeground(new Color(80, 80, 80));
         setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
@@ -50,18 +53,19 @@ public class BotonRedondeado extends JButton {
         int ancho = getWidth();
         int alto = getHeight();
         ButtonModel model = getModel();
-        boolean presionado = model.isPressed();
-        boolean hover = model.isRollover();
+        boolean habilitado = isEnabled();
+        boolean presionado = habilitado && model.isPressed();
+        boolean hover = habilitado && model.isRollover();
 
         int offsetY = presionado ? profundidadSombra : (hover ? 1 : 0);
         int alturaCara = alto - profundidadSombra;
 
         // 1. Dibujar la sombra (base fija anclada al fondo)
-        g2.setColor(colorSombra);
+        g2.setColor(habilitado ? colorSombra : colorSombraDeshabilitado);
         g2.fillRoundRect(0, profundidadSombra, ancho, alturaCara, radioRedondeo, radioRedondeo);
 
         // 2. Dibujar la cara superior (cambia de tono en hover y baja al presionar)
-        g2.setColor(hover && !presionado ? colorHover : colorCara);
+        g2.setColor(!habilitado ? colorDeshabilitado : (hover && !presionado ? colorHover : colorCara));
         g2.fillRoundRect(0, offsetY, ancho, alturaCara, radioRedondeo, radioRedondeo);
 
         // 3. Borde sutil de brillo en estado hover
@@ -73,7 +77,7 @@ public class BotonRedondeado extends JButton {
 
         // 4. Dibujar la tipografía centrada
         g2.setFont(getFont());
-        g2.setColor(getForeground());
+        g2.setColor(habilitado ? getForeground() : colorTextoDeshabilitado);
         FontMetrics fm = g2.getFontMetrics();
         int textX = (ancho - fm.stringWidth(getText())) / 2;
         int textY = (alturaCara - fm.getHeight()) / 2 + fm.getAscent() + offsetY;

@@ -13,8 +13,13 @@ public class CalculatorView extends JFrame {
     public JLabel lblG, lblA, lblB;
     public JRadioButton rbX, rbY;
     public JLabel lblRenderMath;
-    public BotonRedondeado btnCalcular, btnLimpiar, btnBorrar, btnManual, btnPasos, btnGraficar;
+    public BotonRedondeado btnCalcular, btnLimpiar, btnBorrar, btnManual, btnGraficar;
     public JPanel panelTeclado;
+
+    // --- COMPONENTES DEL PANEL LATERAL PERMANENTE DE PASOS ---
+    public JPanel contenedorTarjetasPasos;
+    public JScrollPane scrollPasos;
+    public JLabel lblProgresoPasos;
 
     public BotonRedondeado[] botonesTeclado = new BotonRedondeado[23];
 
@@ -32,29 +37,34 @@ public class CalculatorView extends JFrame {
     private final Color colorBtnNumeros = Color.decode("#35325C");
     private final Color colorBtnOperadores = Color.decode("#4E498A");
     private final Color colorBtnAccionPrincipal = Color.decode("#00E676");
-    private final Color colorBtnPasos = Color.decode("#00B0FF");
     private final Color colorBtnAccionSecundaria = Color.decode("#E91E63");
     private final Color colorBtnBorrar = Color.decode("#FF9100");
     private final Color colorBordeNeón = Color.decode("#00E676");
+    private final Color colorBordeCian = Color.decode("#00B0FF");
     private final Color colorBordeNormal = Color.decode("#4E498A");
     private final Color colorBordeDeshabilitado = Color.decode("#2A274E");
 
     public CalculatorView() {
-        setTitle("Calculadora Avanzada - POO & LaTeX");
-        setSize(580, 830);
-        setMinimumSize(new Dimension(540, 760));
+        setTitle("Calculadora Avanzada de Cálculo - POO & LaTeX");
+        setSize(1120, 820);
+        setMinimumSize(new Dimension(980, 750));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         PanelDegradado fondoPrincipal = new PanelDegradado();
-        fondoPrincipal.setLayout(new BorderLayout(10, 10));
+        fondoPrincipal.setLayout(new BorderLayout(12, 10));
         setContentPane(fondoPrincipal);
 
-        // =======================================
-        // PANEL SUPERIOR: Entradas dinámicas
-        // =======================================
+        // ========================================================
+        // COLUMNA IZQUIERDA: Calculadora (Entradas, Visor y Teclado)
+        // ========================================================
+        JPanel panelIzquierdo = new JPanel(new BorderLayout(0, 8));
+        panelIzquierdo.setOpaque(false);
+        panelIzquierdo.setPreferredSize(new Dimension(520, 0));
+
+        // 1. PANEL SUPERIOR: Entradas dinámicas
         JPanel panelTop = new JPanel(new GridLayout(7, 2, 8, 7));
-        panelTop.setBorder(new EmptyBorder(12, 15, 8, 15));
+        panelTop.setBorder(new EmptyBorder(12, 15, 8, 10));
         panelTop.setOpaque(false);
 
         Font fuenteLabels = new Font("Segoe UI", Font.BOLD, 13);
@@ -107,32 +117,25 @@ public class CalculatorView extends JFrame {
         panelTop.add(lblB);
         panelTop.add(txtB);
 
-        // --- BOTONES DE ACCIÓN (MANUAL, PASOS, GRAFICAR) ---
-        JPanel panelAcciones = new JPanel(new GridLayout(1, 3, 6, 0));
+        // --- BOTONES DE HERRAMIENTAS (MANUAL Y GRAFICAR) ---
+        JPanel panelAcciones = new JPanel(new GridLayout(1, 2, 8, 0));
         panelAcciones.setOpaque(false);
 
         btnManual = new BotonRedondeado("📖 Manual", colorBtnOperadores);
         btnManual.setForeground(colorTextoGeneral);
-        btnManual.setFont(new Font("Segoe UI", Font.BOLD, 12));
-
-        btnPasos = new BotonRedondeado("📝 Pasos", colorBtnPasos);
-        btnPasos.setForeground(Color.decode("#0F0D1C"));
-        btnPasos.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnManual.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
         btnGraficar = new BotonRedondeado("📈 Graficar", colorBtnAccionPrincipal);
         btnGraficar.setForeground(Color.decode("#0F0D1C"));
-        btnGraficar.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnGraficar.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
         panelAcciones.add(btnManual);
-        panelAcciones.add(btnPasos);
         panelAcciones.add(btnGraficar);
 
         panelTop.add(crearLabelOscuro("Herramientas:", fuenteLabels));
         panelTop.add(panelAcciones);
 
-        // =======================================
-        // PANEL CENTRAL: Visor LaTeX Oscuro Neón
-        // =======================================
+        // 2. PANEL CENTRAL IZQUIERDO: Visor LaTeX Oscuro Neón
         JPanel panelDisplay = new JPanel(new BorderLayout());
         panelDisplay.setBackground(colorPantallaMath);
         panelDisplay.setPreferredSize(new Dimension(0, 120));
@@ -161,28 +164,114 @@ public class CalculatorView extends JFrame {
         contenedorArriba.add(panelDisplay, BorderLayout.CENTER);
 
         JPanel margenArriba = new JPanel(new BorderLayout());
-        margenArriba.setBorder(new EmptyBorder(6, 15, 0, 15));
+        margenArriba.setBorder(new EmptyBorder(6, 15, 0, 8));
         margenArriba.setOpaque(false);
         margenArriba.add(contenedorArriba, BorderLayout.CENTER);
 
-        add(margenArriba, BorderLayout.NORTH);
+        panelIzquierdo.add(margenArriba, BorderLayout.NORTH);
 
-        // =======================================
-        // PANEL INFERIOR: Teclado sin huecos
-        // =======================================
+        // 3. PANEL INFERIOR IZQUIERDO: Teclado sin huecos
         panelTeclado = new JPanel(new BorderLayout(0, 8));
-        panelTeclado.setBorder(new EmptyBorder(6, 15, 18, 15));
+        panelTeclado.setBorder(new EmptyBorder(6, 15, 18, 8));
         panelTeclado.setOpaque(false);
-        add(panelTeclado, BorderLayout.CENTER);
+        panelIzquierdo.add(panelTeclado, BorderLayout.CENTER);
 
         construirTecladoOscuro();
+
+        // ========================================================
+        // COLUMNA DERECHA: Panel Permanente de Resolución Paso a Paso
+        // ========================================================
+        JPanel panelDerecho = construirPanelLateralPasos();
+
+        add(panelIzquierdo, BorderLayout.WEST);
+        add(panelDerecho, BorderLayout.CENTER);
+
         actualizarEstiloCampos();
+        limpiarPanelPasos();
+    }
+
+    private JPanel construirPanelLateralPasos() {
+        JPanel envoltorioDerecho = new JPanel(new BorderLayout());
+        envoltorioDerecho.setOpaque(false);
+        envoltorioDerecho.setBorder(new EmptyBorder(16, 4, 18, 16));
+
+        JPanel panelCajaPasos = new JPanel(new BorderLayout(0, 10));
+        panelCajaPasos.setBackground(colorPantallaMath);
+
+        TitledBorder bordePasos = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(colorBordeCian, 1, true),
+                " 📝 PROCEDIMIENTO PASO A PASO (CURSO DE CÁLCULO) ",
+                TitledBorder.LEFT,
+                TitledBorder.TOP,
+                new Font("Segoe UI", Font.BOLD, 12),
+                colorBordeCian
+        );
+        panelCajaPasos.setBorder(BorderFactory.createCompoundBorder(
+                bordePasos,
+                new EmptyBorder(10, 12, 12, 12)
+        ));
+
+        // Barra superior de estado del procedimiento
+        JPanel barraEstadoPasos = new JPanel(new BorderLayout());
+        barraEstadoPasos.setBackground(Color.decode("#1A1733"));
+        barraEstadoPasos.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.decode("#2A274E"), 1, true),
+                new EmptyBorder(8, 12, 8, 12)
+        ));
+
+        lblProgresoPasos = new JLabel("Esperando expresión matemática...", SwingConstants.LEFT);
+        lblProgresoPasos.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblProgresoPasos.setForeground(colorBordeCian);
+        barraEstadoPasos.add(lblProgresoPasos, BorderLayout.CENTER);
+
+        // Contenedor central desplazable donde se agregan las tarjetas progresivamente
+        contenedorTarjetasPasos = new JPanel();
+        contenedorTarjetasPasos.setLayout(new BoxLayout(contenedorTarjetasPasos, BoxLayout.Y_AXIS));
+        contenedorTarjetasPasos.setBackground(colorPantallaMath);
+        contenedorTarjetasPasos.setBorder(new EmptyBorder(4, 4, 4, 4));
+
+        scrollPasos = new JScrollPane(contenedorTarjetasPasos);
+        scrollPasos.setBorder(null);
+        scrollPasos.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPasos.setBackground(colorPantallaMath);
+        scrollPasos.getViewport().setBackground(colorPantallaMath);
+
+        panelCajaPasos.add(barraEstadoPasos, BorderLayout.NORTH);
+        panelCajaPasos.add(scrollPasos, BorderLayout.CENTER);
+
+        envoltorioDerecho.add(panelCajaPasos, BorderLayout.CENTER);
+        return envoltorioDerecho;
+    }
+
+    public void limpiarPanelPasos() {
+        contenedorTarjetasPasos.removeAll();
+
+        JPanel panelVacio = new JPanel(new GridBagLayout());
+        panelVacio.setOpaque(false);
+        panelVacio.setBorder(new EmptyBorder(100, 20, 100, 20));
+
+        JLabel lblVacio = new JLabel(
+                "<html><div style='text-align: center; width: 340px; color: #8E8AB8;'>" +
+                "<b style='color: #00B0FF; font-size: 14px;'>Sin procedimiento activo</b><br><br>" +
+                "Ingresa una función y presiona <b>'='</b> o <b>Enter</b>.<br>" +
+                "Aquí se irán desplegando paso a paso todas las reglas y teoremas del curso de Cálculo utilizados en la solución." +
+                "</div></html>",
+                SwingConstants.CENTER
+        );
+        lblVacio.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        panelVacio.add(lblVacio);
+
+        contenedorTarjetasPasos.add(panelVacio);
+        contenedorTarjetasPasos.revalidate();
+        contenedorTarjetasPasos.repaint();
+
+        lblProgresoPasos.setText("Esperando cálculo...");
     }
 
     public void mostrarPlaceholderResultado() {
         lblRenderMath.setIcon(null);
         lblRenderMath.setForeground(colorTextoSecundario);
-        lblRenderMath.setText("Ingresa una expresión y presiona '=' o '📝 Pasos' para resolver");
+        lblRenderMath.setText("Ingresa una expresión y presiona '=' o Enter para resolver");
     }
 
     public void mostrarIconoResultado(Icon icon) {

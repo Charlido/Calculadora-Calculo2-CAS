@@ -13,10 +13,10 @@ public class CalculatorView extends JFrame {
     public JLabel lblG, lblA, lblB;
     public JRadioButton rbX, rbY;
     public JLabel lblRenderMath;
-    public BotonRedondeado btnCalcular, btnLimpiar, btnManual, btnGraficar;
+    public BotonRedondeado btnCalcular, btnLimpiar, btnBorrar, btnManual, btnPasos, btnGraficar;
     public JPanel panelTeclado;
 
-    public BotonRedondeado[] botonesTeclado = new BotonRedondeado[20];
+    public BotonRedondeado[] botonesTeclado = new BotonRedondeado[23];
 
     // --- PALETA DE COLORES "CYBERPUNK / MODO OSCURO" ---
     private final Color colorOscuroFondo = Color.decode("#1E1B3A");
@@ -32,15 +32,17 @@ public class CalculatorView extends JFrame {
     private final Color colorBtnNumeros = Color.decode("#35325C");
     private final Color colorBtnOperadores = Color.decode("#4E498A");
     private final Color colorBtnAccionPrincipal = Color.decode("#00E676");
+    private final Color colorBtnPasos = Color.decode("#00B0FF");
     private final Color colorBtnAccionSecundaria = Color.decode("#E91E63");
+    private final Color colorBtnBorrar = Color.decode("#FF9100");
     private final Color colorBordeNeón = Color.decode("#00E676");
     private final Color colorBordeNormal = Color.decode("#4E498A");
     private final Color colorBordeDeshabilitado = Color.decode("#2A274E");
 
     public CalculatorView() {
         setTitle("Calculadora Avanzada - POO & LaTeX");
-        setSize(560, 820);
-        setMinimumSize(new Dimension(520, 760));
+        setSize(580, 830);
+        setMinimumSize(new Dimension(540, 760));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -105,22 +107,27 @@ public class CalculatorView extends JFrame {
         panelTop.add(lblB);
         panelTop.add(txtB);
 
-        // --- BOTONES DE ACCIÓN (NEÓN) ---
-        JPanel panelAcciones = new JPanel(new GridLayout(1, 2, 8, 0));
+        // --- BOTONES DE ACCIÓN (MANUAL, PASOS, GRAFICAR) ---
+        JPanel panelAcciones = new JPanel(new GridLayout(1, 3, 6, 0));
         panelAcciones.setOpaque(false);
-
-        btnGraficar = new BotonRedondeado("📈 Graficar", colorBtnAccionPrincipal);
-        btnGraficar.setForeground(Color.decode("#0F0D1C"));
-        btnGraficar.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
         btnManual = new BotonRedondeado("📖 Manual", colorBtnOperadores);
         btnManual.setForeground(colorTextoGeneral);
-        btnManual.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnManual.setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+        btnPasos = new BotonRedondeado("📝 Pasos", colorBtnPasos);
+        btnPasos.setForeground(Color.decode("#0F0D1C"));
+        btnPasos.setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+        btnGraficar = new BotonRedondeado("📈 Graficar", colorBtnAccionPrincipal);
+        btnGraficar.setForeground(Color.decode("#0F0D1C"));
+        btnGraficar.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
         panelAcciones.add(btnManual);
+        panelAcciones.add(btnPasos);
         panelAcciones.add(btnGraficar);
 
-        panelTop.add(crearLabelOscuro("Opciones Adicionales:", fuenteLabels));
+        panelTop.add(crearLabelOscuro("Herramientas:", fuenteLabels));
         panelTop.add(panelAcciones);
 
         // =======================================
@@ -175,7 +182,7 @@ public class CalculatorView extends JFrame {
     public void mostrarPlaceholderResultado() {
         lblRenderMath.setIcon(null);
         lblRenderMath.setForeground(colorTextoSecundario);
-        lblRenderMath.setText("Ingresa una expresión y presiona '=' para calcular");
+        lblRenderMath.setText("Ingresa una expresión y presiona '=' o '📝 Pasos' para resolver");
     }
 
     public void mostrarIconoResultado(Icon icon) {
@@ -249,15 +256,16 @@ public class CalculatorView extends JFrame {
     }
 
     private void construirTecladoOscuro() {
-        // Fila superior de funciones (6 columnas distribuidas uniformemente)
-        JPanel filaFunciones = new JPanel(new GridLayout(1, 6, 10, 0));
+        // Fila superior de funciones (7 columnas distribuidas uniformemente: sin(, cos(, tan(, ln(, ), x, y)
+        JPanel filaFunciones = new JPanel(new GridLayout(1, 7, 8, 0));
         filaFunciones.setOpaque(false);
         filaFunciones.setPreferredSize(new Dimension(0, 52));
 
-        String[] funciones = {"sin(", "cos(", "tan(", "ln(", "x", "y"};
+        String[] funciones = {"sin(", "cos(", "tan(", "ln(", ")", "x", "y"};
         for (int i = 0; i < funciones.length; i++) {
             botonesTeclado[i] = new BotonRedondeado(funciones[i], colorBtnOperadores);
             botonesTeclado[i].setForeground(colorTextoGeneral);
+            botonesTeclado[i].setFont(new Font("Segoe UI", Font.BOLD, 15));
             filaFunciones.add(botonesTeclado[i]);
         }
 
@@ -277,7 +285,7 @@ public class CalculatorView extends JFrame {
                 {"1", "2", "3", "-", "="}
         };
 
-        int btnIndex = 6;
+        int btnIndex = 7;
         for (int fila = 0; fila < centralYDerecho.length; fila++) {
             for (int col = 0; col < centralYDerecho[fila].length; col++) {
                 String txt = centralYDerecho[fila][col];
@@ -307,24 +315,28 @@ public class CalculatorView extends JFrame {
             }
         }
 
-        // Última fila (0, ., C y la parte inferior de =)
+        // Última fila: 0, ., ⌫ (Borrar), C (Limpiar Todo), y parte inferior de =
         gbc.gridheight = 1;
         gbc.gridy = 3;
+        gbc.gridwidth = 1;
 
         gbc.gridx = 0;
-        gbc.gridwidth = 2;
-        botonesTeclado[18] = new BotonRedondeado("0", colorBtnNumeros);
-        botonesTeclado[18].setForeground(colorTextoGeneral);
-        gridPrincipal.add(botonesTeclado[18], gbc);
+        botonesTeclado[btnIndex] = new BotonRedondeado("0", colorBtnNumeros);
+        botonesTeclado[btnIndex].setForeground(colorTextoGeneral);
+        gridPrincipal.add(botonesTeclado[btnIndex], gbc);
+        btnIndex++;
+
+        gbc.gridx = 1;
+        botonesTeclado[btnIndex] = new BotonRedondeado(".", colorBtnNumeros);
+        botonesTeclado[btnIndex].setForeground(colorTextoGeneral);
+        gridPrincipal.add(botonesTeclado[btnIndex], gbc);
 
         gbc.gridx = 2;
-        gbc.gridwidth = 1;
-        botonesTeclado[19] = new BotonRedondeado(".", colorBtnNumeros);
-        botonesTeclado[19].setForeground(colorTextoGeneral);
-        gridPrincipal.add(botonesTeclado[19], gbc);
+        btnBorrar = new BotonRedondeado("⌫", colorBtnBorrar);
+        btnBorrar.setForeground(Color.decode("#0F0D1C"));
+        gridPrincipal.add(btnBorrar, gbc);
 
         gbc.gridx = 3;
-        gbc.gridwidth = 1;
         btnLimpiar = new BotonRedondeado("C", colorBtnAccionSecundaria);
         btnLimpiar.setForeground(Color.WHITE);
         gridPrincipal.add(btnLimpiar, gbc);

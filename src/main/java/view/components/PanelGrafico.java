@@ -56,13 +56,13 @@ public class PanelGrafico extends JPanel {
 
         for (double x = minX; x <= maxX; x += paso) {
             double yF = polinomioF.evaluar(x);
-            if (Double.isFinite(yF)) {
+            if (Double.isFinite(yF) && Math.abs(yF) < 1e4) {
                 if (yF < min) min = yF;
                 if (yF > max) max = yF;
             }
             if (polinomioG != null) {
                 double yG = polinomioG.evaluar(x);
-                if (Double.isFinite(yG)) {
+                if (Double.isFinite(yG) && Math.abs(yG) < 1e4) {
                     if (yG < min) min = yG;
                     if (yG > max) max = yG;
                 }
@@ -189,28 +189,17 @@ public class PanelGrafico extends JPanel {
         int pxFin = Math.min(ancho - 1, escalarX(fin, ancho));
         if (pxFin <= pxInicio) return;
 
-        Path2D area = new Path2D.Double();
-        double xInicioReal = minX + (pxInicio / (double) ancho) * (maxX - minX);
-        double yBaseInicio = (polinomioG != null) ? polinomioG.evaluar(xInicioReal) : 0.0;
-        area.moveTo(pxInicio, escalarY(yBaseInicio, alto));
-
-        // Borde superior por f(x)
+        g2d.setColor(colorRellenoArea);
         for (int px = pxInicio; px <= pxFin; px++) {
             double xReal = minX + (px / (double) ancho) * (maxX - minX);
             double yF = polinomioF.evaluar(xReal);
-            area.lineTo(px, escalarY(yF, alto));
-        }
-
-        // Borde inferior por g(x) o eje X (y = 0)
-        for (int px = pxFin; px >= pxInicio; px--) {
-            double xReal = minX + (px / (double) ancho) * (maxX - minX);
             double yBase = (polinomioG != null) ? polinomioG.evaluar(xReal) : 0.0;
-            area.lineTo(px, escalarY(yBase, alto));
+            if (Double.isFinite(yF) && Double.isFinite(yBase)) {
+                int py1 = escalarY(yF, alto);
+                int py2 = escalarY(yBase, alto);
+                g2d.drawLine(px, Math.min(py1, py2), px, Math.max(py1, py2));
+            }
         }
-        area.closePath();
-
-        g2d.setColor(colorRellenoArea);
-        g2d.fill(area);
 
         // Líneas punteadas en los límites a y b
         Stroke dashed = new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{6, 6}, 0);
@@ -223,11 +212,23 @@ public class PanelGrafico extends JPanel {
     private void dibujarCurva(Graphics2D g2d, Polinomio poly, Color colorCurva, int ancho, int alto) {
         Path2D curva = new Path2D.Double();
         boolean primerPunto = true;
+        int prevPixelY = 0;
 
         for (int pixelX = 0; pixelX < ancho; pixelX++) {
             double xReal = minX + (pixelX / (double) ancho) * (maxX - minX);
             double yReal = poly.evaluar(xReal);
+
+            if (!Double.isFinite(yReal)) {
+                primerPunto = true;
+                continue;
+            }
+
             int pixelY = escalarY(yReal, alto);
+
+            // Evitar líneas verticales falsas en asíntotas (ej. tan(x) o 1/x)
+            if (!primerPunto && Math.abs(pixelY - prevPixelY) > alto * 1.5) {
+                primerPunto = true;
+            }
 
             if (primerPunto) {
                 curva.moveTo(pixelX, pixelY);
@@ -235,6 +236,7 @@ public class PanelGrafico extends JPanel {
             } else {
                 curva.lineTo(pixelX, pixelY);
             }
+            prevPixelY = pixelY;
         }
 
         // Efecto brillo neón exterior

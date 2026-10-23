@@ -45,7 +45,7 @@ public class CalculatorView extends JFrame {
     private final Color colorBordeDeshabilitado = Color.decode("#2A274E");
 
     public CalculatorView() {
-        setTitle("Calculadora Avanzada de Cálculo - POO & LaTeX");
+        setTitle("Calculadora Avanzada de Cálculo - POO");
         setSize(1120, 820);
         setMinimumSize(new Dimension(980, 750));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

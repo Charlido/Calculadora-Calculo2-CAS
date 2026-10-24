@@ -20,7 +20,6 @@ public class CalculatorController {
     private final CalculatorView view;
     private final MathEngine model;
 
-    // Estado para la animación progresiva de los pasos
     private List<PasoResolucion> pasosActuales;
     private int pasosMostrados = 0;
     private Timer timerPasos;
@@ -47,7 +46,6 @@ public class CalculatorController {
         view.txtA.addFocusListener(tracker);
         view.txtB.addFocusListener(tracker);
 
-        // Atajo con tecla Enter desde cualquier caja de texto
         ActionListener enterListener = e -> {
             audio.reproducirSonidoClick();
             ejecutarCalculo();
@@ -169,7 +167,6 @@ public class CalculatorController {
         }
 
         try {
-            // 1. Calcular y mostrar el resultado principal en el visor de la calculadora
             String latexResult = model.calcularLaTeX(modo, f, g, a, b, var);
             TeXFormula formula = new TeXFormula(latexResult);
             int fontSize = latexResult.length() > 45 ? 19 : 23;
@@ -177,7 +174,6 @@ public class CalculatorController {
             icon.setForeground(Color.decode("#00E676"));
             view.mostrarIconoResultado(icon);
 
-            // 2. Generar todos los pasos y desplegarlos progresivamente en el panel derecho
             iniciarDespliegueProgresivoPasos(modo, f, g, a, b, var);
 
         } catch (IllegalArgumentException ex) {
@@ -214,7 +210,6 @@ public class CalculatorController {
             return;
         }
 
-        // Mostrar el primer paso de inmediato y revelar los siguientes progresivamente cada 450 ms
         agregarSiguienteTarjetaPaso();
 
         if (pasosActuales.size() > 1) {
@@ -249,7 +244,6 @@ public class CalculatorController {
         view.contenedorTarjetasPasos.repaint();
         actualizarEstadoProgresoPasos();
 
-        // Auto-scroll suave hacia el nuevo paso agregado
         SwingUtilities.invokeLater(() -> {
             JScrollBar vertical = view.scrollPasos.getVerticalScrollBar();
             vertical.setValue(vertical.getMaximum());
@@ -282,7 +276,6 @@ public class CalculatorController {
         ));
         tarjeta.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Encabezado y explicación teórica del paso
         JPanel panelTexto = new JPanel(new BorderLayout(0, 4));
         panelTexto.setOpaque(false);
 
@@ -297,7 +290,6 @@ public class CalculatorController {
         panelTexto.add(lblTitulo, BorderLayout.NORTH);
         panelTexto.add(lblExplicacion, BorderLayout.CENTER);
 
-        // Visor LaTeX del paso
         JPanel panelFormula = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         panelFormula.setBackground(Color.decode("#121024"));
         panelFormula.setBorder(BorderFactory.createLineBorder(Color.decode("#2A274E"), 1, true));
@@ -326,6 +318,7 @@ public class CalculatorController {
         String g = view.txtG.getText().trim();
         String a = view.txtA.getText().trim();
         String b = view.txtB.getText().trim();
+        String var = view.rbX.isSelected() ? "x" : "y";
 
         if (f.isEmpty()) {
             JOptionPane.showMessageDialog(view, "Debes ingresar una función f(var) para graficar.", "Aviso", JOptionPane.WARNING_MESSAGE);
@@ -333,10 +326,10 @@ public class CalculatorController {
         }
 
         try {
-            Polinomio polinomioF = Polinomio.parse(f);
+            Polinomio polinomioF = Polinomio.parse(f, var);
             Polinomio polinomioG = null;
             if (view.txtG.isEnabled() && !g.isEmpty()) {
-                polinomioG = Polinomio.parse(g);
+                polinomioG = Polinomio.parse(g, var);
             }
 
             Double limA = null;
@@ -358,9 +351,9 @@ public class CalculatorController {
             panelInfo.setBackground(Color.decode("#1E1B3A"));
             panelInfo.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.decode("#00E676")));
 
-            StringBuilder titulo = new StringBuilder("f(x) = ").append(f);
+            StringBuilder titulo = new StringBuilder("f(" + var + ") = ").append(f);
             if (polinomioG != null) {
-                titulo.append("   |   g(x) = ").append(g);
+                titulo.append("   |   g(" + var + ") = ").append(g);
             }
             if (limA != null && limB != null) {
                 titulo.append(String.format("   |   Intervalo [%.2f, %.2f]", limA, limB));

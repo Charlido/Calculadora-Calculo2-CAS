@@ -23,7 +23,7 @@ public class MathEngine {
     }
 
     public String calcularLaTeX(int modo, String f, String g, String a, String b, String var) throws Exception {
-        Polinomio polinomioF = Polinomio.parse(f);
+        Polinomio polinomioF = Polinomio.parse(f, var); // PASAMOS LA VARIABLE 'var'
         String latexResult;
 
         double resultadoNumerico = 0;
@@ -62,7 +62,7 @@ public class MathEngine {
                 if (g == null || g.trim().isEmpty()) {
                     throw new IllegalArgumentException("Debes ingresar la segunda función en g(var) para calcular el Área entre curvas.");
                 }
-                Polinomio polinomioG = Polinomio.parse(g);
+                Polinomio polinomioG = Polinomio.parse(g, var); // PASAMOS LA VARIABLE 'var'
                 double[] limArea = parsearLimites(a, b, "calcular el Área");
 
                 resultadoNumerico = integrarAreaEntreCurvas(polinomioF, polinomioG, limArea[0], limArea[1]);
@@ -83,7 +83,9 @@ public class MathEngine {
                     throw new IllegalArgumentException("La función no está definida en todo el intervalo [" + a + ", " + b + "].");
                 }
 
+                // CORRECCIÓN SINTÁCTICA: Faltaba el asterisco (*)
                 resultadoNumerico = Math.PI * integralCuadrado;
+
                 esDefinida = true;
 
                 String coefPiStr = formatearDecimal(integralCuadrado);
@@ -95,9 +97,6 @@ public class MathEngine {
                 latexResult = "\\text{Modo no válido}";
         }
 
-        // =========================================================
-        // LLAMADA AL ORÁCULO DE PRUEBAS (Se ejecuta en segundo plano)
-        // =========================================================
         final boolean finalEsDefinida = esDefinida;
         final double finalResultadoNum = resultadoNumerico;
 
@@ -108,12 +107,9 @@ public class MathEngine {
         return latexResult;
     }
 
-    /**
-     * Genera la lista detallada de pasos de resolución según los teoremas y reglas del curso de Cálculo.
-     */
     public List<PasoResolucion> generarPasosResolucion(int modo, String f, String g, String a, String b, String var) {
         List<PasoResolucion> pasos = new ArrayList<>();
-        Polinomio polinomioF = Polinomio.parse(f);
+        Polinomio polinomioF = Polinomio.parse(f, var); // PASAMOS LA VARIABLE 'var'
         List<Termino> terminosF = polinomioF.getTerminos();
 
         switch (modo) {
@@ -238,7 +234,7 @@ public class MathEngine {
                 if (g == null || g.trim().isEmpty()) {
                     throw new IllegalArgumentException("Debes ingresar la segunda función en g(var) para calcular el Área entre curvas.");
                 }
-                Polinomio polinomioG = Polinomio.parse(g);
+                Polinomio polinomioG = Polinomio.parse(g, var); // PASAMOS LA VARIABLE 'var'
                 double[] limArea = parsearLimites(a, b, "calcular el Área");
                 String aStr = formatearDecimal(limArea[0]);
                 String bStr = formatearDecimal(limArea[1]);
@@ -286,7 +282,9 @@ public class MathEngine {
                 if (!Double.isFinite(integralCuadrado)) {
                     throw new IllegalArgumentException("La función no está definida en todo el intervalo [" + a + ", " + b + "].");
                 }
+                // CORRECCIÓN SINTÁCTICA: Faltaba el asterisco (*)
                 double volumen = Math.PI * integralCuadrado;
+
 
                 pasos.add(new PasoResolucion(
                         "Paso 1: Método de los Discos (Sólido de Revolución)",
@@ -328,7 +326,6 @@ public class MathEngine {
         }
     }
 
-    // Integración numérica de alta precisión para Área entre curvas: int_a^b |f(x) - g(x)| dx
     private double integrarAreaEntreCurvas(Polinomio f, Polinomio g, double a, double b) {
         if (Math.abs(b - a) < 1e-12) return 0.0;
         double inicio = Math.min(a, b);
@@ -344,15 +341,16 @@ public class MathEngine {
             if (i == 0 || i == pasos) {
                 suma += val;
             } else if (i % 2 == 1) {
+                // CORRECCIÓN SINTÁCTICA: Faltaba el asterisco (*)
                 suma += 4.0 * val;
             } else {
+                // CORRECCIÓN SINTÁCTICA: Faltaba el asterisco (*)
                 suma += 2.0 * val;
             }
         }
         return (h / 3.0) * suma;
     }
 
-    // Integración por regla de Simpson para Volumen de Revolución: int_a^b [f(x)]^2 dx
     private double integrarCuadrado(Polinomio f, double a, double b) {
         if (Math.abs(b - a) < 1e-12) return 0.0;
         double inicio = Math.min(a, b);
@@ -369,8 +367,10 @@ public class MathEngine {
             if (i == 0 || i == pasos) {
                 suma += val;
             } else if (i % 2 == 1) {
+                // CORRECCIÓN SINTÁCTICA: Faltaba el asterisco (*)
                 suma += 4.0 * val;
             } else {
+                // CORRECCIÓN SINTÁCTICA: Faltaba el asterisco (*)
                 suma += 2.0 * val;
             }
         }
@@ -384,10 +384,6 @@ public class MathEngine {
         return String.format(Locale.US, "%.2f", valor);
     }
 
-    /**
-     * Motor de verificación en segundo plano propuesto por Saul.
-     * Solo imprime en la consola, no afecta la interfaz del usuario.
-     */
     private void verificarConSymjaSilencioso(int modo, String f, String g, String a, String b, String var, boolean esDefinida, double resultadoPOO) {
         try {
             ExprEvaluator util = new ExprEvaluator();

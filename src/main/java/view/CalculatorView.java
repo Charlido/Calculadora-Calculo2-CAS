@@ -21,7 +21,7 @@ public class CalculatorView extends JFrame {
     public JScrollPane scrollPasos;
     public JLabel lblProgresoPasos;
 
-    public BotonRedondeado[] botonesTeclado = new BotonRedondeado[23];
+    public BotonRedondeado[] botonesTeclado = new BotonRedondeado[26];
 
     // --- PALETA DE COLORES "CYBERPUNK / MODO OSCURO" ---
     private final Color colorOscuroFondo = Color.decode("#1E1B3A");
@@ -345,12 +345,16 @@ public class CalculatorView extends JFrame {
     }
 
     private void construirTecladoOscuro() {
-        // Fila superior de funciones (7 columnas distribuidas uniformemente: sin(, cos(, tan(, ln(, ), x, y)
-        JPanel filaFunciones = new JPanel(new GridLayout(1, 7, 8, 0));
+        // Dos filas superiores de funciones y variables (5 columnas alineadas con el teclado principal)
+        JPanel filaFunciones = new JPanel(new GridLayout(2, 5, 10, 8));
         filaFunciones.setOpaque(false);
-        filaFunciones.setPreferredSize(new Dimension(0, 52));
+        filaFunciones.setBorder(new EmptyBorder(0, 5, 2, 5));
+        filaFunciones.setPreferredSize(new Dimension(0, 104));
 
-        String[] funciones = {"sin(", "cos(", "tan(", "ln(", ")", "x", "y"};
+        String[] funciones = {
+                "sin(", "cos(", "tan(", "(", ")",
+                "ln(", "x", "y", "x²", "x³"
+        };
         for (int i = 0; i < funciones.length; i++) {
             botonesTeclado[i] = new BotonRedondeado(funciones[i], colorBtnOperadores);
             botonesTeclado[i].setForeground(colorTextoGeneral);
@@ -374,7 +378,7 @@ public class CalculatorView extends JFrame {
                 {"1", "2", "3", "-", "="}
         };
 
-        int btnIndex = 7;
+        int btnIndex = funciones.length;
         for (int fila = 0; fila < centralYDerecho.length; fila++) {
             for (int col = 0; col < centralYDerecho[fila].length; col++) {
                 String txt = centralYDerecho[fila][col];
@@ -419,6 +423,7 @@ public class CalculatorView extends JFrame {
         botonesTeclado[btnIndex] = new BotonRedondeado(".", colorBtnNumeros);
         botonesTeclado[btnIndex].setForeground(colorTextoGeneral);
         gridPrincipal.add(botonesTeclado[btnIndex], gbc);
+        btnIndex++;
 
         gbc.gridx = 2;
         btnBorrar = new BotonRedondeado("⌫", colorBtnBorrar);

@@ -434,8 +434,9 @@ public class MathEngine {
 
     private String normalizarParaSymja(String expr) {
         if (expr == null) return "";
-        String s = expr.replace(" ", "");
+        String s = expr.replace(" ", "").toLowerCase();
         s = s.replaceAll("([0-9])([xy])", "$1*$2");
+        s = s.replaceAll("([xy])([xy])", "$1*$2");
         s = s.replaceAll("([0-9])(sin|cos|tan|ln)", "$1*$2");
         s = s.replace("ln(", "Log(");
         s = s.replace("sin(", "Sin(");

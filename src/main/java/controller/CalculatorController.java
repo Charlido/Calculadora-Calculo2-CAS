@@ -10,13 +10,20 @@ import view.CalculatorView;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class CalculatorController {
+    private static final Pattern REGEX_LIMITE_EN_CONSTRUCCION = Pattern.compile("^[+-]?\\d*\\.?\\d*$");
+
     private final CalculatorView view;
     private final MathEngine model;
 
@@ -33,6 +40,9 @@ public class CalculatorController {
 
     private void inicializarEventos() {
         GestorAudio audio = new GestorAudio();
+
+        aplicarFiltroRegexLimites(view.txtA);
+        aplicarFiltroRegexLimites(view.txtB);
 
         FocusAdapter tracker = new FocusAdapter() {
             @Override
@@ -92,6 +102,33 @@ public class CalculatorController {
         });
     }
 
+    private void aplicarFiltroRegexLimites(JTextField campoLimite) {
+        if (!(campoLimite.getDocument() instanceof AbstractDocument)) {
+            return;
+        }
+        ((AbstractDocument) campoLimite.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                if (string == null) return;
+                String actual = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String candidato = actual.substring(0, offset) + string + actual.substring(offset);
+                if (REGEX_LIMITE_EN_CONSTRUCCION.matcher(candidato).matches()) {
+                    super.insertString(fb, offset, string, attr);
+                }
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                String textoNuevo = (text == null) ? "" : text;
+                String actual = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String candidato = actual.substring(0, offset) + textoNuevo + actual.substring(offset + length);
+                if (REGEX_LIMITE_EN_CONSTRUCCION.matcher(candidato).matches()) {
+                    super.replace(fb, offset, length, textoNuevo, attrs);
+                }
+            }
+        });
+    }
+
     private void actualizarEstadoCampos() {
         int modo = view.comboModo.getSelectedIndex();
 
@@ -117,7 +154,23 @@ public class CalculatorController {
 
     private void escribirEnCampo(String texto) {
         if (view.campoActivo != null && view.campoActivo.isEnabled()) {
-            view.campoActivo.setText(view.campoActivo.getText() + texto);
+            String valorInsertar = texto;
+            if (texto.equals("x²")) {
+                valorInsertar = "x^2";
+            } else if (texto.equals("x³")) {
+                valorInsertar = "x^3";
+            }
+
+            // Opción 5: Validar con Regex que en los campos de límites (a y b) solo se ingresen números
+            if (view.campoActivo == view.txtA || view.campoActivo == view.txtB) {
+                String candidato = view.campoActivo.getText() + valorInsertar;
+                if (!REGEX_LIMITE_EN_CONSTRUCCION.matcher(candidato).matches()) {
+                    view.campoActivo.requestFocus();
+                    return;
+                }
+            }
+
+            view.campoActivo.setText(view.campoActivo.getText() + valorInsertar);
             view.campoActivo.requestFocus();
         }
     }
@@ -446,7 +499,7 @@ public class CalculatorController {
                 "            <td bgcolor=\"#1E1B3A\" style=\"background-color: #1E1B3A; padding: 15px; color: #D1D1E9; line-height: 1.5; border-left: 3px solid #E91E63;\">\n" +
                 "                El motor soporta tanto polinomios como funciones trascendentes:\n" +
                 "                <ul style=\"margin-top: 8px; margin-bottom: 0; padding-left: 20px;\">\n" +
-                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Polinomios:</b> Usa <code>^</code> para potencias (Ej: <code style=\"color: #00E676;\">3x^2 - 5x + 2</code>). Los términos semejantes se simplifican automáticamente.</li>\n" +
+                "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Polinomios:</b> Usa <code>^</code> o los botones rápidos <code>x²</code> y <code>x³</code> para potencias (Ej: <code style=\"color: #00E676;\">3x^2 - 5x + 2</code>). Los términos semejantes se simplifican automáticamente.</li>\n" +
                 "                    <li style=\"margin-bottom: 5px;\"><b style=\"color:#FFFFFF;\">Trigonométricas:</b> Soporta <code>sin</code>, <code>cos</code> y <code>tan</code> (Ej: <code style=\"color: #00E676;\">2sin(3x) - cos(x)</code>).</li>\n" +
                 "                    <li><b style=\"color:#FFFFFF;\">Logaritmo Natural:</b> Soporta <code>ln</code> y potencias negativas (Ej: <code style=\"color: #00E676;\">4ln(x) + 1/x</code>).</li>\n" +
                 "                </ul>\n" +

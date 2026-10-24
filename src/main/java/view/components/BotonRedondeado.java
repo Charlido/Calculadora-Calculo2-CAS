@@ -25,7 +25,7 @@ public class BotonRedondeado extends JButton {
         setOpaque(false);
         setRolloverEnabled(true);
 
-        setFont(new Font("Segoe UI", Font.BOLD, 16));
+        setFont(new Font("Segoe UI", Font.BOLD, 20));
         setForeground(new Color(80, 80, 80));
         setCursor(new Cursor(Cursor.HAND_CURSOR));
     }

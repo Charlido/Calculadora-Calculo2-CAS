@@ -46,13 +46,17 @@ public class CalculatorView extends JFrame {
 
     public CalculatorView() {
         setTitle("Calculadora Avanzada de Cálculo - POO");
-        setSize(1120, 820);
-        setMinimumSize(new Dimension(980, 750));
+
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        int anchoInicial = Math.min(1300, Math.max(1160, screen.width - 60));
+        int altoInicial = Math.min(900, Math.max(820, screen.height - 70));
+        setSize(anchoInicial, altoInicial);
+        setMinimumSize(new Dimension(1100, 800));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         PanelDegradado fondoPrincipal = new PanelDegradado();
-        fondoPrincipal.setLayout(new BorderLayout(12, 10));
+        fondoPrincipal.setLayout(new BorderLayout(14, 10));
         setContentPane(fondoPrincipal);
 
         // ========================================================
@@ -60,14 +64,14 @@ public class CalculatorView extends JFrame {
         // ========================================================
         JPanel panelIzquierdo = new JPanel(new BorderLayout(0, 8));
         panelIzquierdo.setOpaque(false);
-        panelIzquierdo.setPreferredSize(new Dimension(520, 0));
+        panelIzquierdo.setPreferredSize(new Dimension(560, 0));
 
         // 1. PANEL SUPERIOR: Entradas dinámicas
-        JPanel panelTop = new JPanel(new GridLayout(7, 2, 8, 7));
+        JPanel panelTop = new JPanel(new GridLayout(7, 2, 10, 8));
         panelTop.setBorder(new EmptyBorder(12, 15, 8, 10));
         panelTop.setOpaque(false);
 
-        Font fuenteLabels = new Font("Segoe UI", Font.BOLD, 13);
+        Font fuenteLabels = new Font("Segoe UI", Font.BOLD, 16);
 
         comboModo = new JComboBox<>(new String[]{
                 "Derivada Simbólica",
@@ -78,9 +82,9 @@ public class CalculatorView extends JFrame {
         });
         comboModo.setBackground(colorCajasTexto);
         comboModo.setForeground(colorTextoGeneral);
-        comboModo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        comboModo.setFont(new Font("Segoe UI", Font.BOLD, 15));
 
-        Font fuenteModerna = new Font("Segoe UI", Font.BOLD, 14);
+        Font fuenteModerna = new Font("Segoe UI", Font.BOLD, 17);
 
         txtF = crearTextFieldOscuro(fuenteModerna);
         txtG = crearTextFieldOscuro(fuenteModerna);
@@ -88,7 +92,7 @@ public class CalculatorView extends JFrame {
         txtB = crearTextFieldOscuro(fuenteModerna);
         campoActivo = txtF;
 
-        JPanel panelRadios = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        JPanel panelRadios = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
         panelRadios.setOpaque(false);
         rbX = new JRadioButton("dx", true);
         configurarRadio(rbX, fuenteLabels);
@@ -118,16 +122,16 @@ public class CalculatorView extends JFrame {
         panelTop.add(txtB);
 
         // --- BOTONES DE HERRAMIENTAS (MANUAL Y GRAFICAR) ---
-        JPanel panelAcciones = new JPanel(new GridLayout(1, 2, 8, 0));
+        JPanel panelAcciones = new JPanel(new GridLayout(1, 2, 10, 0));
         panelAcciones.setOpaque(false);
 
         btnManual = new BotonRedondeado("📖 Manual", colorBtnOperadores);
         btnManual.setForeground(colorTextoGeneral);
-        btnManual.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnManual.setFont(new Font("Segoe UI", Font.BOLD, 15));
 
         btnGraficar = new BotonRedondeado("📈 Graficar", colorBtnAccionPrincipal);
         btnGraficar.setForeground(Color.decode("#0F0D1C"));
-        btnGraficar.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnGraficar.setFont(new Font("Segoe UI", Font.BOLD, 15));
 
         panelAcciones.add(btnManual);
         panelAcciones.add(btnGraficar);
@@ -138,14 +142,14 @@ public class CalculatorView extends JFrame {
         // 2. PANEL CENTRAL IZQUIERDO: Visor LaTeX Oscuro Neón
         JPanel panelDisplay = new JPanel(new BorderLayout());
         panelDisplay.setBackground(colorPantallaMath);
-        panelDisplay.setPreferredSize(new Dimension(0, 120));
+        panelDisplay.setPreferredSize(new Dimension(0, 130));
 
         TitledBorder bordeTitulo = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(colorBordeNeón, 1, true),
                 " RESULTADO EXACTO ",
                 TitledBorder.LEFT,
                 TitledBorder.TOP,
-                new Font("Segoe UI", Font.BOLD, 11),
+                new Font("Segoe UI", Font.BOLD, 14),
                 colorBordeNeón
         );
         panelDisplay.setBorder(BorderFactory.createCompoundBorder(
@@ -154,7 +158,7 @@ public class CalculatorView extends JFrame {
         ));
 
         lblRenderMath = new JLabel("", SwingConstants.CENTER);
-        lblRenderMath.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+        lblRenderMath.setFont(new Font("Segoe UI", Font.ITALIC, 15));
         mostrarPlaceholderResultado();
         panelDisplay.add(lblRenderMath, BorderLayout.CENTER);
 
@@ -203,7 +207,7 @@ public class CalculatorView extends JFrame {
                 " 📝 PROCEDIMIENTO PASO A PASO (CURSO DE CÁLCULO) ",
                 TitledBorder.LEFT,
                 TitledBorder.TOP,
-                new Font("Segoe UI", Font.BOLD, 12),
+                new Font("Segoe UI", Font.BOLD, 14),
                 colorBordeCian
         );
         panelCajaPasos.setBorder(BorderFactory.createCompoundBorder(
@@ -216,11 +220,11 @@ public class CalculatorView extends JFrame {
         barraEstadoPasos.setBackground(Color.decode("#1A1733"));
         barraEstadoPasos.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.decode("#2A274E"), 1, true),
-                new EmptyBorder(8, 12, 8, 12)
+                new EmptyBorder(9, 14, 9, 14)
         ));
 
         lblProgresoPasos = new JLabel("Esperando expresión matemática...", SwingConstants.LEFT);
-        lblProgresoPasos.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblProgresoPasos.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblProgresoPasos.setForeground(colorBordeCian);
         barraEstadoPasos.add(lblProgresoPasos, BorderLayout.CENTER);
 
@@ -251,14 +255,14 @@ public class CalculatorView extends JFrame {
         panelVacio.setBorder(new EmptyBorder(100, 20, 100, 20));
 
         JLabel lblVacio = new JLabel(
-                "<html><div style='text-align: center; width: 340px; color: #8E8AB8;'>" +
-                "<b style='color: #00B0FF; font-size: 14px;'>Sin procedimiento activo</b><br><br>" +
+                "<html><div style='text-align: center; width: 420px; color: #8E8AB8;'>" +
+                "<b style='color: #00B0FF; font-size: 17px;'>Sin procedimiento activo</b><br><br>" +
                 "Ingresa una función y presiona <b>'='</b> o <b>Enter</b>.<br>" +
                 "Aquí se irán desplegando paso a paso todas las reglas y teoremas del curso de Cálculo utilizados en la solución." +
                 "</div></html>",
                 SwingConstants.CENTER
         );
-        lblVacio.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblVacio.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         panelVacio.add(lblVacio);
 
         contenedorTarjetasPasos.add(panelVacio);
@@ -349,7 +353,7 @@ public class CalculatorView extends JFrame {
         JPanel filaFunciones = new JPanel(new GridLayout(2, 5, 10, 8));
         filaFunciones.setOpaque(false);
         filaFunciones.setBorder(new EmptyBorder(0, 5, 2, 5));
-        filaFunciones.setPreferredSize(new Dimension(0, 104));
+        filaFunciones.setPreferredSize(new Dimension(0, 112));
 
         String[] funciones = {
                 "sin(", "cos(", "tan(", "(", ")",
@@ -358,7 +362,7 @@ public class CalculatorView extends JFrame {
         for (int i = 0; i < funciones.length; i++) {
             botonesTeclado[i] = new BotonRedondeado(funciones[i], colorBtnOperadores);
             botonesTeclado[i].setForeground(colorTextoGeneral);
-            botonesTeclado[i].setFont(new Font("Segoe UI", Font.BOLD, 15));
+            botonesTeclado[i].setFont(new Font("Segoe UI", Font.BOLD, 18));
             filaFunciones.add(botonesTeclado[i]);
         }
 
@@ -391,7 +395,7 @@ public class CalculatorView extends JFrame {
                 if (txt.equals("=")) {
                     btnCalcular = new BotonRedondeado(txt, colorBtnAccionPrincipal);
                     btnCalcular.setForeground(Color.decode("#0F0D1C"));
-                    btnCalcular.setFont(new Font("Segoe UI", Font.BOLD, 22));
+                    btnCalcular.setFont(new Font("Segoe UI", Font.BOLD, 26));
                     gbc.gridheight = 2;
                     gridPrincipal.add(btnCalcular, gbc);
                 } else if (txt.matches("[0-9]")) {

@@ -222,7 +222,7 @@ public class CalculatorController {
         try {
             String latexResult = model.calcularLaTeX(modo, f, g, a, b, var);
             TeXFormula formula = new TeXFormula(latexResult);
-            int fontSize = latexResult.length() > 45 ? 19 : 23;
+            int fontSize = latexResult.length() > 45 ? 22 : 26;
             TeXIcon icon = formula.createTeXIcon(TeXConstants.STYLE_DISPLAY, fontSize);
             icon.setForeground(Color.decode("#00E676"));
             view.mostrarIconoResultado(icon);
@@ -333,11 +333,11 @@ public class CalculatorController {
         panelTexto.setOpaque(false);
 
         JLabel lblTitulo = new JLabel(paso.titulo);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTitulo.setForeground(colorTitulo);
 
-        JLabel lblExplicacion = new JLabel("<html><body style='width: 410px;'>" + paso.explicacion + "</body></html>");
-        lblExplicacion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        JLabel lblExplicacion = new JLabel("<html><body style='width: 460px;'>" + paso.explicacion + "</body></html>");
+        lblExplicacion.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblExplicacion.setForeground(Color.decode("#D1D1E9"));
 
         panelTexto.add(lblTitulo, BorderLayout.NORTH);
@@ -349,7 +349,7 @@ public class CalculatorController {
 
         try {
             TeXFormula tf = new TeXFormula(paso.formulaLaTeX);
-            int size = paso.formulaLaTeX.length() > 50 ? 16 : 19;
+            int size = paso.formulaLaTeX.length() > 50 ? 19 : 22;
             TeXIcon icon = tf.createTeXIcon(TeXConstants.STYLE_DISPLAY, size);
             icon.setForeground(colorFormula);
             JLabel lblMath = new JLabel(icon);
@@ -357,7 +357,7 @@ public class CalculatorController {
         } catch (Exception e) {
             JLabel lblFallback = new JLabel(paso.formulaLaTeX);
             lblFallback.setForeground(colorFormula);
-            lblFallback.setFont(new Font("Monospaced", Font.BOLD, 13));
+            lblFallback.setFont(new Font("Monospaced", Font.BOLD, 15));
             panelFormula.add(lblFallback);
         }
 
@@ -414,7 +414,7 @@ public class CalculatorController {
 
             JLabel lblTitulo = new JLabel(titulo.toString());
             lblTitulo.setForeground(Color.decode("#00E676"));
-            lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
             panelInfo.add(lblTitulo);
 
             view.components.PanelGrafico grafico = new view.components.PanelGrafico(polinomioF, polinomioG, limA, limB);
